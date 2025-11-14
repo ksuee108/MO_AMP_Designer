@@ -228,18 +228,20 @@ if "optimization_results" in st.session_state and st.session_state.optimization_
 
 else:
     st.info("No optimization results cached yet. Run optimization first.")
-fasta_path = os.path.join(user_home, f"{selected_algo}.fasta")
-with open(fasta_path, "w") as fasta_file:
-    for _, row in merged_df_flipped.iterrows():
-        fasta_file.write(f">{row['sequence']}\n{row['sequence']}\n")
 
-pareto_df_flipped.to_csv(os.path.join(user_home, f"{selected_algo} all optimize result.csv"), index=False)
-st.info(f"Optimize pareto front result saved at file: {user_home}\\{selected_algo} all optimize result.csv")
+for algo in algorithms:
+    fasta_path = os.path.join(user_home, f"{algo}.fasta")
+    with open(fasta_path, "w") as fasta_file:
+        for _, row in merged_df_flipped.iterrows():
+            fasta_file.write(f">{row['sequence']}\n{row['sequence']}\n")
 
-merged_df_flipped.to_csv(os.path.join(user_home, f"{selected_algo} optimize result.csv"), index=False)
-st.info(f"Optimize pareto front result saved at file: {user_home}\\{selected_algo} optimize result.csv")
+    pareto_df_flipped.to_csv(os.path.join(user_home, f"{algo} all optimize result.csv"), index=False)
+    st.info(f"Optimize pareto front result saved at file: {user_home}\\{algo} all optimize result.csv")
 
-st.info(f"FASTA saved at file: {fasta_path}")
+    merged_df_flipped.to_csv(os.path.join(user_home, f"{algo} optimize result.csv"), index=False)
+    st.info(f"Optimize pareto front result saved at file: {user_home}\\{algo} optimize result.csv")
+
+    st.info(f"FASTA saved at file: {fasta_path}")
 st.markdown("---")
 
 if st.button("📊 Plot Results"):
