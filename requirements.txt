@@ -1,0 +1,10 @@
+streamlit
+pandas
+folium
+scikit-learn
+numpy
+scipy
+pymoo
+numba==0.57
+biopython
+peptides

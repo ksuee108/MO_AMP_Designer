@@ -1,10 +1,6 @@
 import streamlit as st
 import pandas as pd
-import folium
-from streamlit_folium import st_folium
 import numpy as np
-import random
-import time
 from design import  algorithms_setup, plot_pareto_fronts_many, plot_pareto_fronts_multi, amino_acid_percentage  # 需確認這兩個在 design.py 中實作
 import os
 
@@ -146,9 +142,9 @@ else:
     # Load data only if not cached
     if st.session_state.loaded_df is None:
         try:
-            df = pd.read_csv(f"biopython-{Bacteria[0]}.csv")
+            df = pd.read_csv(f"dataset\\biopython-{Bacteria[0]}.csv")
             for i in range(1, len(Bacteria)):
-                temp_df = pd.read_csv(f"biopython-{Bacteria[i]}.csv")
+                temp_df = pd.read_csv(f"dataset\\biopython-{Bacteria[i]}.csv")
                 df = pd.merge(df, temp_df, on='sequence', suffixes=('', f'_{Bacteria[i]}')).drop_duplicates(subset=['sequence'])
             st.session_state.loaded_df = df
             st.success(f"Loaded data for {', '.join(Bacteria)} with {len(df)} sequences.")
@@ -224,28 +220,32 @@ if "optimization_results" in st.session_state and st.session_state.optimization_
         with tab2:
             st.write(f"**All optimized results for {selected_algo}:**")
             st.dataframe(pareto_df_flipped)
-            pareto_df_flipped.to_csv(os.path.join(user_home, f"{selected_algo} all optimize result.csv"), index=False)
-            st.info(f"Optimize pareto front result saved at file: {user_home}\\{selected_algo} all optimize result.csv")
+    
         
         with tab3:
             st.write(f"**Merged data for {selected_algo}:**")
             st.dataframe(merged_df_flipped)
-            merged_df_flipped.to_csv(os.path.join(user_home, f"{selected_algo} optimize result.csv"), index=False)
-            st.info(f"Optimize pareto front result saved at file: {user_home}\\{selected_algo} optimize result.csv")
-    
-    fasta_path = os.path.join(user_home, f"{selected_algo}.fasta")
-    with open(fasta_path, "w") as fasta_file:
-        for _, row in merged_df_flipped.iterrows():
-            fasta_file.write(f">{row['sequence']}\n{row['sequence']}\n")
-            
-    st.info(f"FASTA saved at file: {fasta_path}")
+
 else:
     st.info("No optimization results cached yet. Run optimization first.")
+fasta_path = os.path.join(user_home, f"{selected_algo}.fasta")
+with open(fasta_path, "w") as fasta_file:
+    for _, row in merged_df_flipped.iterrows():
+        fasta_file.write(f">{row['sequence']}\n{row['sequence']}\n")
 
+pareto_df_flipped.to_csv(os.path.join(user_home, f"{selected_algo} all optimize result.csv"), index=False)
+st.info(f"Optimize pareto front result saved at file: {user_home}\\{selected_algo} all optimize result.csv")
+
+merged_df_flipped.to_csv(os.path.join(user_home, f"{selected_algo} optimize result.csv"), index=False)
+st.info(f"Optimize pareto front result saved at file: {user_home}\\{selected_algo} optimize result.csv")
+
+st.info(f"FASTA saved at file: {fasta_path}")
 st.markdown("---")
+
 if st.button("📊 Plot Results"):
-    amino_acid_percentage(user_home, algorithms)
-    if len(optimization_directions) > 3:
-        plot_pareto_fronts_many(user_home, algorithms, optimization_directions)
-    else:
-        plot_pareto_fronts_multi(user_home, algorithms, optimization_directions)
+    with st.spinner("Running optimization... This may take a few minutes."):
+        amino_acid_percentage(user_home, algorithms)
+        if len(optimization_directions) > 3:
+            plot_pareto_fronts_many(user_home, algorithms, optimization_directions)
+        else:
+            plot_pareto_fronts_multi(user_home, algorithms, optimization_directions)

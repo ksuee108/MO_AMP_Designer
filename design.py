@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 
 from pymoo.optimize import minimize
-from pymoo.visualization.scatter import Scatter
 from pymoo.core.problem import Problem
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.algorithms.moo.rnsga2 import RNSGA2
@@ -22,7 +21,6 @@ from pymoo.visualization.scatter import Scatter
 
 from BioAnalysis import Bio_analysis
 import matplotlib.pyplot as plt
-import math
 import streamlit as st
 
 class MyProblemWithData(Problem):
@@ -148,7 +146,7 @@ def amino_acid_percentage(path, algorithms):
         percentage_values = list(percentages.values())
         fig, ax = plt.subplots()
         ax.bar(amino_acids, percentage_values)
-        ax.set_title('Percentage of Each Amino Acid')
+        ax.set_title(f'Percentage of Each Amino Acid {algo_name}')
         ax.set_xlabel('Amino Acid')
         ax.set_ylabel('Percentage')
         fig.tight_layout()
@@ -258,41 +256,41 @@ def plot_pareto_fronts_many(path, algorithms, optimization_directions):
             elif n_objectives > 1:
                 if axes.ndim == 1:
                     axes = axes.reshape(-1, 1)
-            
-            for i in range(n_objectives):
-                for j in range(n_objectives):
-                    ax = axes[i, j] if n_objectives > 1 else axes[0, 0]
-                    
-                    if i == j:
-                        # Show objective name on diagonal
-                        ax.text(0.5, 0.5, selected_cols_name[i], 
-                            ha='center', va='center', fontsize=12, fontweight='bold')
-                        ax.set_xticks([])
-                        ax.set_yticks([])
-                        ax.spines['top'].set_visible(False)
-                        ax.spines['right'].set_visible(False)
-                        ax.spines['bottom'].set_visible(False)
-                        ax.spines['left'].set_visible(False)
-                    else:
-                        # Scatter plot for non-diagonal
-                        scatter = ax.scatter(all_X[:, j], all_X[:, i], 
-                                        c=np.arange(len(all_X)), cmap='viridis', 
-                                        s=50, alpha=0.7, edgecolors='black', linewidth=0.5)
-                        ax.scatter(X[:, j], X[:, i], 
-                                        color='red', s=50, alpha=0.7, edgecolors='red', linewidth=0.5)
+            with st.spinner("Running optimization... This may take a few minutes."):
+                for i in range(n_objectives):
+                    for j in range(n_objectives):
+                        ax = axes[i, j] if n_objectives > 1 else axes[0, 0]
                         
-                        # Labels
-                        if j == 0:
-                            ax.set_ylabel(selected_cols_name[i], fontsize=10, fontweight='bold')
+                        if i == j:
+                            # Show objective name on diagonal
+                            ax.text(0.5, 0.5, selected_cols_name[i], 
+                                ha='center', va='center', fontsize=12, fontweight='bold')
+                            ax.set_xticks([])
+                            ax.set_yticks([])
+                            ax.spines['top'].set_visible(False)
+                            ax.spines['right'].set_visible(False)
+                            ax.spines['bottom'].set_visible(False)
+                            ax.spines['left'].set_visible(False)
                         else:
-                            ax.set_ylabel('')
-                        
-                        if i == n_objectives - 1:
-                            ax.set_xlabel(selected_cols_name[j], fontsize=10, fontweight='bold')
-                        else:
-                            ax.set_xlabel('')
-                        ax.grid(True, alpha=0.3)
-            
+                            # Scatter plot for non-diagonal
+                            scatter = ax.scatter(all_X[:, j], all_X[:, i], 
+                                            c=np.arange(len(all_X)), cmap='viridis', 
+                                            s=50, alpha=0.7, edgecolors='black', linewidth=0.5)
+                            ax.scatter(X[:, j], X[:, i], 
+                                            color='red', s=50, alpha=0.7, edgecolors='red', linewidth=0.5)
+                            
+                            # Labels
+                            if j == 0:
+                                ax.set_ylabel(selected_cols_name[i], fontsize=10, fontweight='bold')
+                            else:
+                                ax.set_ylabel('')
+                            
+                            if i == n_objectives - 1:
+                                ax.set_xlabel(selected_cols_name[j], fontsize=10, fontweight='bold')
+                            else:
+                                ax.set_xlabel('')
+                            ax.grid(True, alpha=0.3)
+                
             fig.suptitle(f'Scatter Matrix Plot - {algo_name}', fontsize=16, fontweight='bold')
             plt.tight_layout()
             st.pyplot(fig)
@@ -401,6 +399,7 @@ def plot_pareto_fronts_multi(path, algorithms, optimization_directions):
                 plt.close(fig)
             
             # For 3 or more objectives show scatter matrix
+            
             if n_objectives >= 3:
                 st.write("**Scatter Matrix Plot:**")
                 
