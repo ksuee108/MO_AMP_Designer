@@ -2,14 +2,15 @@
 
 ### How to run it on your own machine
 
-1. # Install the python v3.10
+1. # Install the python verson don't newer then v3.11
 
     https://www.python.org/downloads/
 
 2. # active virtual environment
 
    ```
-   $ py -3.10 -m venv amp_env
+   $ python -m venv amp_env
+   $ Set-ExecutionPolicy -Scope Currentuser -ExecutionPolicy Remotesigned
    $ .\amp_env\Scripts\Activate.ps1
    ```
 
