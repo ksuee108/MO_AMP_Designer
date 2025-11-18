@@ -1,0 +1,80 @@
+# These files are generated during building or development and are intentionally
+# untracked to ignore by Git. For other development environment specific files,
+# such as editor configuration, a good practice is to exclude them using the
+# .git/info/exclude in the cloned repository or a global .gitignore file.
+# -------------------------
+# Python 基本忽略
+# -------------------------
+__pycache__/
+# Virtual environment
+venv/
+env/
+.venv/
+amp_env/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Python build
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+upload.txt
+var_amio_acid_and_DBAASP.py
+Biopython.py
+# -------------------------
+# Streamlit
+# -------------------------
+.streamlit/secrets.toml
+.streamlit/*.log
+
+# -------------------------
+# OS / IDE files
+# -------------------------
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+
+# -------------------------
+# Logs / Temp
+# -------------------------
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# -------------------------
+# Data folders
+# -------------------------
+data/
+cache/
+results/
+output/
+*.npz
+
+# 如果你要保留自建 dataset，但不要忽略結構，可用：
+# dataset/*
+# !dataset/.keep
+
+# -------------------------
+# Model files
+# -------------------------
+*.h5
+*.pt
+*.pth
+*.pkl
+*.joblib
