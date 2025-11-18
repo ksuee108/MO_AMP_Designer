@@ -24,7 +24,7 @@
 3. # Install the requirements
 
    ```
-   $ pip install wheel setuptools
+   $ pip install wheel setuptools # for the first time
    $ pip install -r requirements.txt
    ```
 
