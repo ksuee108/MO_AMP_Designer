@@ -1,5 +1,5 @@
 git status
 git rm -r --cached .
 git add .
-git commit -m "Clean untracked files based on gitignore"
+git commit -m "Apply gitignore rules"
 git push
