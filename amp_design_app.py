@@ -505,7 +505,7 @@ with main_tab3:
     These parameters directly influence search convergence, diversity maintenance, and computational runtime.
                 
     """)
-    st.image("side bar.png")
+    st.image("figure\\side bar.png")
     st.markdown("""
     ### 4. **Select Physicochemical Objectives**
     Choose at least two descriptors for optimization.  
@@ -523,7 +523,7 @@ with main_tab3:
     For each objective, specify whether the algorithm should **minimize** or **maximize** the descriptor.  
     (Gravy is treated as *hydrophilicity* or *hydrophobicity* depending on user preference.)
                 """)
-    st.image("Objectives to optimize.png")
+    st.image("figure\\Objectives to optimize.png")
     st.markdown("""
     ### 5. **Add Optional Constraints**
     Users may define upper/lower bounds to restrict the peptide search space.  
@@ -534,7 +534,7 @@ with main_tab3:
 
     Constraints help enforce biologically realistic design regions and improve hit quality.
                 """)
-    st.image("constraints.png")
+    st.image("figure\\constraints.png")
     st.markdown("""
     ### 6. **Run Optimization**
     Press **“Run Optimization”** to execute the selected algorithms.  
@@ -559,11 +559,11 @@ with main_tab3:
     - Sequence-level physicochemical distribution analyses  
 
     These visualizations provide insight into peptide behavior, trade-offs among descriptors, and optimization dynamics.
-
+                
                 """)
-    st.image("run.png")
-    st.image("result.png")
-    st.image("plot.png")
+    st.image("figure\\run.png")
+    st.image("figure\\result.png")
+    st.image("figure\\plot.png")
     st.markdown("""
     ### Summary
     This app provides a structured, multi-objective approach to AMP design by integrating algorithmic search, physicochemical evaluation, and biological constraint modeling. It aims to accelerate the rational development of antimicrobial peptides with optimized properties.
