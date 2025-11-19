@@ -219,10 +219,16 @@ with main_tab1:
     )
 
     if len(Bacteria) == 0 and uploaded_file is None:
-        st.warning("Please select at least one optimization algorithm or upload a dataset.")
-    
-    elif len(opt) < 2:
+        st.warning("Please select at least one Bacteria or upload a dataset.")
+        st.stop()
+
+    if len(opt) < 2:
         st.warning("Please select at least two objectives to optimize.")
+        st.stop()
+
+    if len(algorithms) < 1:
+        st.warning("Please select at least one algorithm to optimize.")
+        st.stop()
     else:
         optimization_directions = {}
         for i in opt:
