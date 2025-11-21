@@ -57,9 +57,8 @@ with main_tab1:
         st.header("Select Bacteria")
         Bacteria = st.multiselect(
             "Choose bacteria",
-            options=["E. faecium", "S. aureus", "KP", "A. baumannii", "P. aeruginosa", "E. coli", 
-                     "B. subtilis", "P. vulgaris", "Salmonella", "Listeria", 
-                     "Serratia", "Shigella", "Micrococcus"]
+            options=["E. faecium", "S. aureus", "K. pneumoniae", "A. baumannii", "P. aeruginosa", "E. coli", "Enterobacter spp",
+                     "B. subtilis", "P. vulgaris"]
         )
 
         st.header("Upload Peptide Sequence")
