@@ -31,5 +31,5 @@
 4. # Run the app
 
    ```
-   $ streamlit run amp_design_app.py
+   $ streamlit run mo_amp_design_app.py
    ```

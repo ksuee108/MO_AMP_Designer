@@ -318,7 +318,7 @@ with main_tab1:
                 dfs = [df]
                 for b in Bacteria:
                     try:
-                        temp_df = pd.read_csv(f"dataset/biopython-{b}.csv").drop(columns=['MIC'])
+                        temp_df = pd.read_csv(f"dataset/biopython-{b}.csv")
                         dfs.append(temp_df)
                     except FileNotFoundError as e:
                         st.error(f"Missing file for {b}: {e}")
@@ -336,7 +336,7 @@ with main_tab1:
                 try:
                     df = pd.read_csv(f"dataset\\biopython-{Bacteria[0]}.csv")
                     for i in range(1, len(Bacteria)):
-                        temp_df = pd.read_csv(f"dataset\\biopython-{Bacteria[i]}.csv").drop(columns=['MIC'])
+                        temp_df = pd.read_csv(f"dataset\\biopython-{Bacteria[i]}.csv")
                         df = pd.concat([df, temp_df], ignore_index=True).drop_duplicates(subset=['Sequence'])
                     st.session_state.loaded_df = df
                     st.success(f"Loaded data for {', '.join(Bacteria)} with {len(df)} Sequences.")
@@ -380,7 +380,7 @@ with main_tab1:
         # Display cached results
         # ----------------------------
         st.subheader("📋 Optimization Results")
-
+        st.session_state.optimization_results = st.session_state.get("optimization_results", {})
         if "optimization_results" in st.session_state and st.session_state.optimization_results:
             selected_algo = st.selectbox(
                 "Select algorithm to view results:",
