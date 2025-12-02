@@ -18,7 +18,7 @@
    ```
    ```
    $ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-   $ .\amp_env\Scripts\Activate.ps1
+   $ .\amp_env\Scripts\Activate.ps1    #
    ```
 
 3. # Install the requirements
@@ -31,5 +31,5 @@
 4. # Run the app
 
    ```
-   $ streamlit run mo_amp_design_app.py
+   $ streamlit run mo_amp_designer_app.py
    ```
