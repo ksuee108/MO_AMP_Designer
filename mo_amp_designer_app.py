@@ -372,7 +372,7 @@ with main_tab1:
                     optimized_results = setup.run()  # 假設 run() 回傳 dict
                     st.session_state["optimized_results"] = optimized_results
                     st.success("Optimization completed successfully ✅")
-                    st.session_state["optimization_results"] = setup.optimization_results
+                    st.session_state["optimization_results"] = optimized_results
 
                 except Exception as e:
                     st.error(f"Error during optimization: {e}")
