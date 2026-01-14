@@ -370,10 +370,8 @@ with main_tab1:
                     )
                     setup.run_optimization()
                     optimized_results = setup.run()  # 假設 run() 回傳 dict
-                    st.session_state["optimized_results"] = optimized_results
                     st.success("Optimization completed successfully ✅")
-                    st.session_state["optimization_results"] = optimized_results
-
+                    
                 except Exception as e:
                     st.error(f"Error during optimization: {e}")
 
@@ -388,9 +386,12 @@ with main_tab1:
                 if not df_dict:
                     continue
 
-                res_dict_flipped = df_dict["res_dict"].copy()
-                pareto_df_flipped = df_dict["pareto_df"].copy()
-                merged_df_flipped = df_dict["merged_df"].copy()
+                if "optimization_results" in st.session_state:
+                    results = st.session_state.optimization_results[algo]
+                    res_dict_flipped = results["res_dict"].copy()
+                    pareto_df_flipped = results["pareto_df"].copy()
+                    merged_df_flipped = results["merged_df"].copy()
+
 
                 # Gravy 特殊處理
                 if "Gravy" in optimization_directions:
