@@ -420,7 +420,7 @@ class algorithms_setup():
 
             res_dict = {}
             for i, obj_name in enumerate(self.optimization_directions.keys()):
-                res_dict[obj_name] = res.F[:, i]
+                res_dict[obj_name] = [row[i] for row in res.F]
             
             res_dict = pd.DataFrame(res_dict)
 
