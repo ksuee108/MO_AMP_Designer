@@ -374,8 +374,8 @@ with main_tab1:
                     
                 except Exception as e:
                     st.write(st.session_state.optimization_results)
-                    st.write("Optimization results type:", type(st.session_state.optimization_results))
-                    st.write("Keys:", list(st.session_state.optimization_results.keys()))
+                    #st.write("Optimization results type:", type(st.session_state.optimization_results))
+                    #st.write("Keys:", list(st.session_state.optimization_results.keys()))
 
                     st.error(f"Error during optimization: {e}")
 
@@ -385,10 +385,10 @@ with main_tab1:
         st.subheader("📋 Optimization Results")
         st.session_state.optimization_results = st.session_state.get("optimization_results", {})
         if "optimization_results" in st.session_state and st.session_state["optimization_results"]:
-            for _, algo_name in algorithms:
-                if algo_name not in st.session_state["optimization_results"]:
+            for algo in algorithms:
+                if algo not in st.session_state.optimization_results:
                     continue
-                df_dict = st.session_state["optimization_results"][algo_name]  # 如果是 dict
+                df_dict = st.session_state.optimization_results[algo]
                 res_dict_flipped = df_dict["res_dict"].copy()
                 pareto_df_flipped = df_dict["pareto_df"].copy()
                 merged_df_flipped = df_dict["merged_df"].copy()
@@ -398,7 +398,7 @@ with main_tab1:
                     for d in [res_dict_flipped, pareto_df_flipped, merged_df_flipped]:
                         d["Gravy"] = -d["Gravy"]
                 
-                st.markdown(f"### {algo_name} Results")
+                st.markdown(f"### {algo} Results")
                 tab1, tab2, tab3 = st.tabs(["Objectives", "All Results", "Merged Data"])
                 with tab1:
                     st.dataframe(res_dict_flipped)
@@ -409,9 +409,9 @@ with main_tab1:
 
                 # Web download
                 fasta_str = "\n".join([f">{seq}\n{seq}" for seq in merged_df_flipped["Sequence"]])
-                st.download_button(f"⬇ Download {algo_name} FASTA", fasta_str, f"{algo_name}.fasta", "text/plain", key=f"fasta_{algo_name}")
-                st.download_button(f"⬇ Download {algo_name} all optimization results", pareto_df_flipped.to_csv(index=False), f"{algo_name}_all.csv", "text/csv", key=f"all_{algo_name}")
-                st.download_button(f"⬇ Download {algo_name} final optimized results", merged_df_flipped.to_csv(index=False), f"{algo_name}_final.csv", "text/csv", key=f"final_{algo_name}")
+                st.download_button(f"⬇ Download {algo} FASTA", fasta_str, f"{algo}.fasta", "text/plain", key=f"fasta_{algo}")
+                st.download_button(f"⬇ Download {algo} all optimization results", pareto_df_flipped.to_csv(index=False), f"{algo}_all.csv", "text/csv", key=f"all_{algo}")
+                st.download_button(f"⬇ Download {algo} final optimized results", merged_df_flipped.to_csv(index=False), f"{algo}_final.csv", "text/csv", key=f"final_{algo}")
 
             st.markdown("---")
             if st.button("📊 Plot Results"):
