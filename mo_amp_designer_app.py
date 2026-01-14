@@ -475,7 +475,7 @@ with main_tab1:
         st.markdown("---")
         if st.button("📊 Plot Results"):
             if "optimized_results" not in st.session_state:
-                st.session_state["optimized_results"] = {}
+                st.session_state["optimized_results"] = st.session_state.optimization_results
 
             for algo in algorithms:
                 df = st.session_state.get("optimized_results", {}).get(algo)
