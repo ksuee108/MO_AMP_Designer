@@ -359,7 +359,6 @@ with main_tab1:
                 try:
                     # algorithm setup
                     setup = algorithms_setup(
-                        path=user_home,
                         df=df,
                         algorithms_list=algorithms,
                         pop_size=pop_size,
@@ -435,16 +434,16 @@ with main_tab1:
                 continue
             
             # -------- Local file save (for local execution) --------
-            fasta_path = os.path.join(user_home, f"{algo}.fasta")
-            with open(fasta_path, "w") as f:
-                for _, row in merged_df_flipped.iterrows():
-                    f.write(f">{row['Sequence']}\n{row['Sequence']}\n")
+            # fasta_path = os.path.join(user_home, f"{algo}.fasta")
+            # with open(fasta_path, "w") as f:
+            #    for _, row in merged_df_flipped.iterrows():
+            #        f.write(f">{row['Sequence']}\n{row['Sequence']}\n")
 
-            pareto_df_flipped.to_csv(os.path.join(user_home, f"{algo}_all_optimize_result.csv"), index=False)
-            merged_df_flipped.to_csv(os.path.join(user_home, f"{algo}_optimize_result.csv"), index=False)
-            st.info(f"Optimize pareto front result saved at file: {user_home}\\{algo} all optimize result.csv")
-            st.info(f"Optimize pareto front result saved at file: {user_home}\\{algo} optimize result.csv")
-            st.info(f"FASTA saved at file: {fasta_path}")
+            # pareto_df_flipped.to_csv(os.path.join(user_home, f"{algo}_all_optimize_result.csv"), index=False)
+            # merged_df_flipped.to_csv(os.path.join(user_home, f"{algo}_optimize_result.csv"), index=False)
+            # st.info(f"Optimize pareto front result saved at file: {user_home}\\{algo} all optimize result.csv")
+            # st.info(f"Optimize pareto front result saved at file: {user_home}\\{algo} optimize result.csv")
+            # st.info(f"FASTA saved at file: {fasta_path}")
 
             # -------- Web download --------
             fasta_str = ""
@@ -476,14 +475,17 @@ with main_tab1:
             )
 
         st.markdown("---")
-
         if st.button("📊 Plot Results"):
-            with st.spinner("Running optimization... This may take a few minutes."):
-                amino_acid_percentage(user_home, algorithms)
-                if len(optimization_directions) > 3:
-                    plot_pareto_fronts_many(user_home, algorithms, optimization_directions)
-                else:
-                    plot_pareto_fronts_multi(user_home, algorithms, optimization_directions)
+            for algo in algorithms:
+                with st.spinner("Running optimization... This may take a few minutes."):
+                    df = st.session_state["optimized_results"].get(algo)
+                    if df is not None:
+                        amino_acid_percentage(algo, df)
+                    
+                    if len(optimization_directions) > 3:
+                        plot_pareto_fronts_many(algo, st.session_state["optimized_results"][algo], optimization_directions)
+                    else:
+                        plot_pareto_fronts_multi(algo, st.session_state["optimized_results"][algo], optimization_directions)
         else:
             can_proceed = False
 
