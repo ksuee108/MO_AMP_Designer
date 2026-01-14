@@ -381,8 +381,10 @@ with main_tab1:
         st.subheader("📋 Optimization Results")
         st.session_state.optimization_results = st.session_state.get("optimization_results", {})
         if "optimization_results" in st.session_state and st.session_state["optimization_results"]:
-            for algo in algorithms:
-                df_dict = st.session_state["optimization_results"][algo]  # 如果是 dict
+            for _, algo_name in algorithms:
+                if algo_name not in st.session_state["optimization_results"]:
+                    continue
+                df_dict = st.session_state["optimization_results"][algo_name]  # 如果是 dict
                 res_dict_flipped = df_dict["res_dict"].copy()
                 pareto_df_flipped = df_dict["pareto_df"].copy()
                 merged_df_flipped = df_dict["merged_df"].copy()
@@ -403,26 +405,26 @@ with main_tab1:
 
                 # Web download
                 fasta_str = "\n".join([f">{seq}\n{seq}" for seq in merged_df_flipped["Sequence"]])
-                st.download_button(f"⬇ Download {algo} FASTA", fasta_str, f"{algo}.fasta", "text/plain", key=f"fasta_{algo}")
-                st.download_button(f"⬇ Download {algo} all optimization results", pareto_df_flipped.to_csv(index=False), f"{algo}_all.csv", "text/csv", key=f"all_{algo}")
-                st.download_button(f"⬇ Download {algo} final optimized results", merged_df_flipped.to_csv(index=False), f"{algo}_final.csv", "text/csv", key=f"final_{algo}")
+                st.download_button(f"⬇ Download {algo_name} FASTA", fasta_str, f"{algo_name}.fasta", "text/plain", key=f"fasta_{algo_name}")
+                st.download_button(f"⬇ Download {algo_name} all optimization results", pareto_df_flipped.to_csv(index=False), f"{algo_name}_all.csv", "text/csv", key=f"all_{algo_name}")
+                st.download_button(f"⬇ Download {algo_name} final optimized results", merged_df_flipped.to_csv(index=False), f"{algo_name}_final.csv", "text/csv", key=f"final_{algo_name}")
 
             st.markdown("---")
             if st.button("📊 Plot Results"):
-                for algo in algorithms:
-                    df_dict = st.session_state["optimization_results"].get(algo)
+                for _, algo_name in algorithms:
+                    df_dict = st.session_state["optimization_results"].get(algo_name, {})
                     if not df_dict:
                         continue
                     merged_df_flipped = df_dict["merged_df"].copy()
                     
                     # Amino acid percentage
-                    amino_acid_percentage(algo, merged_df_flipped)
+                    amino_acid_percentage(algo_name, merged_df_flipped)
                     
                     # Pareto fronts
                     if len(optimization_directions) > 3:
-                        plot_pareto_fronts_many(algo, merged_df_flipped, optimization_directions)
+                        plot_pareto_fronts_many(algo_name, merged_df_flipped, optimization_directions)
                     else:
-                        plot_pareto_fronts_multi(algo, merged_df_flipped, optimization_directions)
+                        plot_pareto_fronts_multi(algo_name, merged_df_flipped, optimization_directions)
             else:
                 st.info("No optimization results cached yet. Run optimization first.")
 
