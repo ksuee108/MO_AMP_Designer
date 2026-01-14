@@ -369,7 +369,7 @@ with main_tab1:
                         constraint_dict_list=constraint_dict_list
                     )
                     setup.run_optimization()
-                    st.session_state["optimization_results"] = setup.run()  # 假設 run() 回傳 dict
+                    setup.run()  # 假設 run() 回傳 dict
                     st.success("Optimization completed successfully ✅")
                     
                 except Exception as e:
@@ -394,7 +394,7 @@ with main_tab1:
                     for d in [res_dict_flipped, pareto_df_flipped, merged_df_flipped]:
                         d["Gravy"] = -d["Gravy"]
                 
-                st.markdown(f"### {algo} Results")
+                st.markdown(f"### {algo_name} Results")
                 tab1, tab2, tab3 = st.tabs(["Objectives", "All Results", "Merged Data"])
                 with tab1:
                     st.dataframe(res_dict_flipped)
