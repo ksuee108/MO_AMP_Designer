@@ -459,4 +459,4 @@ class algorithms_setup():
                 "pareto_df": pareto_df,
                 "merged_df": merged_df
             }
-        return st.session_state.optimization_results.keys()
+        return st.session_state.optimization_results
