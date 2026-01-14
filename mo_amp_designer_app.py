@@ -448,29 +448,34 @@ with main_tab1:
             for _, row in merged_df_flipped.iterrows():
                 fasta_str += f">{row['Sequence']}\n{row['Sequence']}\n"
 
-            st.download_button(
-                label=f"⬇ Download {algo} FASTA",
-                data=fasta_str,
-                file_name=f"{algo}.fasta",
-                mime="text/plain",
-                key=f"download_fasta_{algo}"
-            )
+            cols = st.columns(3)
 
-            st.download_button(
-                label=f"⬇ Download {algo} all optimization results",
-                data=pareto_df_flipped.to_csv(index=False),
-                file_name=f"{algo}_all_optimize_result.csv",
-                mime="text/csv",
-                key=f"download_all_{algo}"
-            )
+            with cols[0]:
+                st.download_button(
+                    label=f"⬇ Download {algo} FASTA",
+                    data=fasta_str,
+                    file_name=f"{algo}.fasta",
+                    mime="text/plain",
+                    key=f"download_fasta_{algo}"
+                )
 
-            st.download_button(
-                label=f"⬇ Download {algo} final optimized results",
-                data=merged_df_flipped.to_csv(index=False),
-                file_name=f"{algo}_optimize_result.csv",
-                mime="text/csv",
-                key=f"download_final_{algo}"
-            )
+            with cols[1]:
+                st.download_button(
+                    label=f"⬇ Download {algo} all optimization results",
+                    data=pareto_df_flipped.to_csv(index=False),
+                    file_name=f"{algo}_all_optimize_result.csv",
+                    mime="text/csv",
+                    key=f"download_all_{algo}"
+                )
+
+            with cols[2]:
+                st.download_button(
+                    label=f"⬇ Download {algo} final optimized results",
+                    data=merged_df_flipped.to_csv(index=False),
+                    file_name=f"{algo}_optimize_result.csv",
+                    mime="text/csv",
+                    key=f"download_final_{algo}"
+                )
 
         st.markdown("---")
         if st.button("📊 Plot Results"):
