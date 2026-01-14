@@ -380,42 +380,40 @@ with main_tab1:
         # ----------------------------
         st.subheader("📋 Optimization Results")
         st.session_state.optimization_results = st.session_state.get("optimization_results", {})
-        if "optimization_results" in st.session_state and st.session_state.optimization_results:
+        if st.session_state.optimization_results:
             selected_algo = st.selectbox(
                 "Select algorithm to view results:",
-                algorithms
+                [a for a in algorithms if a in st.session_state.optimization_results]
             )
             
             if selected_algo:
+                results = st.session_state.optimization_results.get(selected_algo, None)
+                if results is None:
+                    st.warning(f"No results found for {selected_algo}")
+                else:
+                    res_dict_flipped = pd.DataFrame(results["res_dict"])
+                    pareto_df_flipped = pd.DataFrame(results["pareto_df"])
+                    merged_df_flipped = pd.DataFrame(results["merged_df"])
 
-                if selected_algo:
-                    results = st.session_state.optimization_results[selected_algo]
-                    res_dict_flipped = results["res_dict"].copy()
-                    pareto_df_flipped = results["pareto_df"].copy()
-                    merged_df_flipped = results["merged_df"].copy()
-                
-                if "Gravy" in optimization_directions:
-                    if optimization_directions["Gravy"] == 'hydrophobicity':
-                        res_dict_flipped['Gravy'] = -res_dict_flipped['Gravy']
-                        pareto_df_flipped['Gravy'] = -pareto_df_flipped['Gravy']
-                        merged_df_flipped['Gravy'] = -merged_df_flipped['Gravy']
+                    # Gravy 最大化處理
+                    if "Gravy" in optimization_directions and optimization_directions["Gravy"] == 'hydrophobicity':
+                        for df in [res_dict_flipped, pareto_df_flipped, merged_df_flipped]:
+                            if "Gravy" in df.columns:
+                                df["Gravy"] = -df["Gravy"]
 
-                results = st.session_state.optimization_results[selected_algo]
-                
-                tab1, tab2, tab3 = st.tabs(["Objectives", "All Results", "Merged Data"])
-                
-                with tab1:
-                    st.write(f"**Objective values for {selected_algo}:**")
-                    st.dataframe(res_dict_flipped)
-                
-                with tab2:
-                    st.write(f"**All optimized results for {selected_algo}:**")
-                    st.dataframe(pareto_df_flipped)
-            
-                
-                with tab3:
-                    st.write(f"**Merged data for {selected_algo}:**")
-                    st.dataframe(merged_df_flipped)
+                    tab1, tab2, tab3 = st.tabs(["Objectives", "All Results", "Merged Data"])
+
+                    with tab1:
+                        st.write(f"**Objective values for {selected_algo}:**")
+                        st.dataframe(res_dict_flipped)
+
+                    with tab2:
+                        st.write(f"**All optimized results for {selected_algo}:**")
+                        st.dataframe(pareto_df_flipped)
+
+                    with tab3:
+                        st.write(f"**Merged data for {selected_algo}:**")
+                        st.dataframe(merged_df_flipped)
         else:
             st.info("No optimization results cached yet. Run optimization first.")
             can_proceed = False
