@@ -373,6 +373,7 @@ with main_tab1:
                     st.success("Optimization completed successfully ✅")
                     
                 except Exception as e:
+                    st.text(st.session_state.optimization_results)
                     st.error(f"Error during optimization: {e}")
 
         # ----------------------------
