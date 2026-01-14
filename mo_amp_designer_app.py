@@ -417,7 +417,7 @@ with main_tab1:
             st.markdown("---")
             if st.button("📊 Plot Results"):
                 for algo in algorithms:
-                    df_dict = st.session_state["optimized_results"].get(algo)
+                    df_dict = st.session_state["optimization_results"].get(algo)
                     if not df_dict:
                         continue
                     merged_df_flipped = df_dict["merged_df"].copy()
