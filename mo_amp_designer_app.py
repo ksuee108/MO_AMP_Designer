@@ -474,16 +474,23 @@ with main_tab1:
 
         st.markdown("---")
         if st.button("📊 Plot Results"):
+            if "optimized_results" not in st.session_state:
+                st.session_state["optimized_results"] = {}
+
             for algo in algorithms:
-                with st.spinner("Running optimization... This may take a few minutes."):
-                    df = st.session_state["optimized_results"].get(algo)
-                    if df is not None:
-                        amino_acid_percentage(algo, df)
-                    
+                df = st.session_state.get("optimized_results", {}).get(algo)
+                if df is None or df.empty:
+                    st.warning(f"No optimized results for {algo}")
+                    continue
+
+                with st.spinner(f"Plotting results for {algo}..."):
+                    amino_acid_percentage(algo, df)
+
                     if len(optimization_directions) > 3:
-                        plot_pareto_fronts_many(algo, st.session_state["optimized_results"][algo], optimization_directions)
+                        plot_pareto_fronts_many(algo, df, optimization_directions)
                     else:
-                        plot_pareto_fronts_multi(algo, st.session_state["optimized_results"][algo], optimization_directions)
+                        plot_pareto_fronts_multi(algo, df, optimization_directions)
+
         else:
             can_proceed = False
 
