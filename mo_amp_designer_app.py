@@ -492,6 +492,7 @@ with main_tab1:
                         continue
 
                     with st.spinner(f"Plotting results for {algo}..."):
+                        st.markdown(f"### 📈 Pareto Front Visualization ({algo})")
                         amino_acid_percentage(algo, df)
 
                         if len(optimization_directions) > 3:

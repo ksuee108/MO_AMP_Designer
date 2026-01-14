@@ -287,8 +287,6 @@ def plot_pareto_fronts_multi(algo: str, df: pd.DataFrame, optimization_direction
     X = plot_df.values
     n_obj = len(objectives)
 
-    st.markdown(f"### 📈 Pareto Front Visualization ({algo})")
-
     # ---------- 2D ----------
     if n_obj == 2:
         fig, ax = plt.subplots(figsize=(7, 6))
