@@ -369,7 +369,7 @@ with main_tab1:
                         constraint_dict_list=constraint_dict_list
                     )
                     setup.run_optimization()
-                    setup.run()  # 假設 run() 回傳 dict
+                    st.session_state["optimization_results"] = setup.run()  # 假設 run() 回傳 dict
                     st.success("Optimization completed successfully ✅")
                     
                 except Exception as e:
