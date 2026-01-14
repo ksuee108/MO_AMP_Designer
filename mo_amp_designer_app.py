@@ -369,7 +369,7 @@ with main_tab1:
                         constraint_dict_list=constraint_dict_list
                     )
                     setup.run_optimization()
-                    optimized_results = setup.run()  # 假設 run() 回傳 dict
+                    st.session_state["optimization_results"] = setup.run()  # 假設 run() 回傳 dict
                     st.success("Optimization completed successfully ✅")
                     
                 except Exception as e:
@@ -380,25 +380,21 @@ with main_tab1:
         # ----------------------------
         st.subheader("📋 Optimization Results")
         st.session_state.optimization_results = st.session_state.get("optimization_results", {})
-        if "optimized_results" in st.session_state and st.session_state["optimized_results"]:
+        if "optimization_results" in st.session_state and st.session_state["optimization_results"]:
             for algo in algorithms:
-                df_dict = st.session_state["optimized_results"].get(algo)
+                df_dict = st.session_state["optimization_results"].get(algo)
                 if not df_dict:
                     continue
-
-                if "optimization_results" in st.session_state:
-                    results = st.session_state.optimization_results[algo]
-                    res_dict_flipped = results["res_dict"].copy()
-                    pareto_df_flipped = results["pareto_df"].copy()
-                    merged_df_flipped = results["merged_df"].copy()
-
-
+                
+                res_dict_flipped = df_dict["res_dict"].copy()
+                pareto_df_flipped = df_dict["pareto_df"].copy()
+                merged_df_flipped = df_dict["merged_df"].copy()
+                
                 # Gravy 特殊處理
-                if "Gravy" in optimization_directions:
-                    if optimization_directions["Gravy"] == "hydrophobicity":
-                        for d in [res_dict_flipped, pareto_df_flipped, merged_df_flipped]:
-                            d["Gravy"] = -d["Gravy"]
-
+                if "Gravy" in optimization_directions and optimization_directions["Gravy"] == "hydrophobicity":
+                    for d in [res_dict_flipped, pareto_df_flipped, merged_df_flipped]:
+                        d["Gravy"] = -d["Gravy"]
+                
                 st.markdown(f"### {algo} Results")
                 tab1, tab2, tab3 = st.tabs(["Objectives", "All Results", "Merged Data"])
                 with tab1:
@@ -421,10 +417,10 @@ with main_tab1:
                     if not df_dict:
                         continue
                     merged_df_flipped = df_dict["merged_df"].copy()
-
+                    
                     # Amino acid percentage
                     amino_acid_percentage(algo, merged_df_flipped)
-
+                    
                     # Pareto fronts
                     if len(optimization_directions) > 3:
                         plot_pareto_fronts_many(algo, merged_df_flipped, optimization_directions)
