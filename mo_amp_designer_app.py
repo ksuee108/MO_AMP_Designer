@@ -433,19 +433,48 @@ with main_tab1:
             if "pareto_df_flipped" not in locals() or pareto_df_flipped is None:
                 #st.warning(f"Skip {algo} because pareto_df_flipped is not defined.")
                 continue
-            # --------------------------------
+            
+            # -------- Local file save (for local execution) --------
             fasta_path = os.path.join(user_home, f"{algo}.fasta")
-            with open(fasta_path, "w") as fasta_file:
+            with open(fasta_path, "w") as f:
                 for _, row in merged_df_flipped.iterrows():
-                    fasta_file.write(f">{row['Sequence']}\n{row['Sequence']}\n")
+                    f.write(f">{row['Sequence']}\n{row['Sequence']}\n")
 
-            pareto_df_flipped.to_csv(os.path.join(user_home, f"{algo} all optimize result.csv"), index=False)
+            pareto_df_flipped.to_csv(os.path.join(user_home, f"{algo}_all_optimize_result.csv"), index=False)
+            merged_df_flipped.to_csv(os.path.join(user_home, f"{algo}_optimize_result.csv"), index=False)
             st.info(f"Optimize pareto front result saved at file: {user_home}\\{algo} all optimize result.csv")
-
-            merged_df_flipped.to_csv(os.path.join(user_home, f"{algo} optimize result.csv"), index=False)
             st.info(f"Optimize pareto front result saved at file: {user_home}\\{algo} optimize result.csv")
-
             st.info(f"FASTA saved at file: {fasta_path}")
+
+            # -------- Web download --------
+            fasta_str = ""
+            for _, row in merged_df_flipped.iterrows():
+                fasta_str += f">{row['Sequence']}\n{row['Sequence']}\n"
+
+            st.download_button(
+                label=f"⬇ Download {algo} FASTA",
+                data=fasta_str,
+                file_name=f"{algo}.fasta",
+                mime="text/plain",
+                key=f"download_fasta_{algo}"
+            )
+
+            st.download_button(
+                label=f"⬇ Download {algo} all optimization results",
+                data=pareto_df_flipped.to_csv(index=False),
+                file_name=f"{algo}_all_optimize_result.csv",
+                mime="text/csv",
+                key=f"download_all_{algo}"
+            )
+
+            st.download_button(
+                label=f"⬇ Download {algo} final optimized results",
+                data=merged_df_flipped.to_csv(index=False),
+                file_name=f"{algo}_optimize_result.csv",
+                mime="text/csv",
+                key=f"download_final_{algo}"
+            )
+
         st.markdown("---")
 
         if st.button("📊 Plot Results"):
