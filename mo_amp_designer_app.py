@@ -413,79 +413,24 @@ with main_tab1:
                 st.download_button(f"⬇ Download {algo} all optimization results", pareto_df_flipped.to_csv(index=False), f"{algo}_all.csv", "text/csv", key=f"all_{algo}")
                 st.download_button(f"⬇ Download {algo} final optimized results", merged_df_flipped.to_csv(index=False), f"{algo}_final.csv", "text/csv", key=f"final_{algo}")
 
-        """ 
-        for algo in algorithms:
-            if algo not in st.session_state.optimization_results:
-                #st.warning(f"Skip {algo} because no results found.")
-                continue
+            st.markdown("---")
+            if st.button("📊 Plot Results"):
+                for algo in algorithms:
+                    df_dict = st.session_state["optimized_results"].get(algo)
+                    if not df_dict:
+                        continue
+                    merged_df_flipped = df_dict["merged_df"].copy()
 
-            if "merged_df_flipped" not in locals() or merged_df_flipped is None:
-                #st.warning(f"Skip {algo} because merged_df_flipped is not defined.")
-                continue
+                    # Amino acid percentage
+                    amino_acid_percentage(algo, merged_df_flipped)
 
-            if "pareto_df_flipped" not in locals() or pareto_df_flipped is None:
-                #st.warning(f"Skip {algo} because pareto_df_flipped is not defined.")
-                continue
-            
-            # -------- Local file save (for local execution) --------
-            # fasta_path = os.path.join(user_home, f"{algo}.fasta")
-            # with open(fasta_path, "w") as f:
-            #    for _, row in merged_df_flipped.iterrows():
-            #        f.write(f">{row['Sequence']}\n{row['Sequence']}\n")
-
-            # pareto_df_flipped.to_csv(os.path.join(user_home, f"{algo}_all_optimize_result.csv"), index=False)
-            # merged_df_flipped.to_csv(os.path.join(user_home, f"{algo}_optimize_result.csv"), index=False)
-            # st.info(f"Optimize pareto front result saved at file: {user_home}\\{algo} all optimize result.csv")
-            # st.info(f"Optimize pareto front result saved at file: {user_home}\\{algo} optimize result.csv")
-            # st.info(f"FASTA saved at file: {fasta_path}")
-
-            # -------- Web download --------
-            fasta_str = ""
-            for _, row in merged_df_flipped.iterrows():
-                fasta_str += f">{row['Sequence']}\n{row['Sequence']}\n"
-
-            st.download_button(
-                label=f"⬇ Download {algo} FASTA",
-                data=fasta_str,
-                file_name=f"{algo}.fasta",
-                mime="text/plain",
-                key=f"download_fasta_{algo}"
-            )
-
-            st.download_button(
-                label=f"⬇ Download {algo} all optimization results",
-                data=pareto_df_flipped.to_csv(index=False),
-                file_name=f"{algo}_all_optimize_result.csv",
-                mime="text/csv",
-                key=f"download_all_{algo}"
-            )
-
-            st.download_button(
-                label=f"⬇ Download {algo} final optimized results",
-                data=merged_df_flipped.to_csv(index=False),
-                file_name=f"{algo}_optimize_result.csv",
-                mime="text/csv",
-                key=f"download_final_{algo}"
-            )
-"""
-        st.markdown("---")
-        if st.button("📊 Plot Results"):
-            for algo in algorithms:
-                df_dict = st.session_state["optimized_results"].get(algo)
-                if not df_dict:
-                    continue
-                merged_df_flipped = df_dict["merged_df"].copy()
-
-                # Amino acid percentage
-                amino_acid_percentage(algo, merged_df_flipped)
-
-                # Pareto fronts
-                if len(optimization_directions) > 3:
-                    plot_pareto_fronts_many(algo, merged_df_flipped, optimization_directions)
-                else:
-                    plot_pareto_fronts_multi(algo, merged_df_flipped, optimization_directions)
-        else:
-            st.info("No optimization results cached yet. Run optimization first.")
+                    # Pareto fronts
+                    if len(optimization_directions) > 3:
+                        plot_pareto_fronts_many(algo, merged_df_flipped, optimization_directions)
+                    else:
+                        plot_pareto_fronts_multi(algo, merged_df_flipped, optimization_directions)
+            else:
+                st.info("No optimization results cached yet. Run optimization first.")
 
 with main_tab2:
     st.header("About this App")
