@@ -22,6 +22,7 @@ from pymoo.visualization.scatter import Scatter
 from BioAnalysis import Bio_analysis
 import matplotlib.pyplot as plt
 import streamlit as st
+from mpl_toolkits.mplot3d import Axes3D
 
 class MyProblemWithData(Problem):
     def __init__(self, sequences, optimization_directions=None, sequence_length=12, opt=2, constraint_dict_list=None, *args, **kwargs):
@@ -300,7 +301,7 @@ def plot_pareto_fronts_multi(algo: str, df: pd.DataFrame, optimization_direction
 
     # ---------- 3D ----------
     elif n_obj == 3:
-        from mpl_toolkits.mplot3d import Axes3D
+        
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection="3d")
         ax.scatter(X[:, 0], X[:, 1], X[:, 2],
