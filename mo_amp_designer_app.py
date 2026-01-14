@@ -479,9 +479,16 @@ with main_tab1:
                 st.warning("No optimization results found. Run optimization first.")
             else:
                 for algo in algorithms:
-                    df = results_dict.get(algo)
-                    if df is None or df.empty:
+                    result_entry = results_dict.get(algo)
+                    if result_entry is None:
                         st.warning(f"No optimized results for {algo}")
+                        continue
+
+                    # 選擇你要繪圖的 DataFrame
+                    # 比如用 merged_df
+                    df = result_entry.get("merged_df")
+                    if df is None or not isinstance(df, pd.DataFrame) or df.empty:
+                        st.warning(f"No valid DataFrame for {algo}")
                         continue
 
                     with st.spinner(f"Plotting results for {algo}..."):
