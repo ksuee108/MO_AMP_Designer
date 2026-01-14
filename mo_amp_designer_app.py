@@ -382,10 +382,7 @@ with main_tab1:
         st.session_state.optimization_results = st.session_state.get("optimization_results", {})
         if "optimization_results" in st.session_state and st.session_state["optimization_results"]:
             for algo in algorithms:
-                df_dict = st.session_state["optimization_results"].get(algo)
-                if not df_dict:
-                    continue
-                
+                df_dict = st.session_state["optimization_results"][algo]  # 如果是 dict
                 res_dict_flipped = df_dict["res_dict"].copy()
                 pareto_df_flipped = df_dict["pareto_df"].copy()
                 merged_df_flipped = df_dict["merged_df"].copy()
