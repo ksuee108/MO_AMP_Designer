@@ -457,6 +457,6 @@ class algorithms_setup():
             st.session_state.optimization_results[name] = {
                 "res_dict": res_dict,
                 "pareto_df": pareto_df,
-                "merged_df": merged_df
+                "merged_df": merged_df.copy()
             }
         return list(st.session_state.optimization_results.keys())
