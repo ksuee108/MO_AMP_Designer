@@ -539,7 +539,7 @@ with main_tab3:
     Choose one or more pathogens from the sidebar.  
     The app will automatically load precomputed physicochemical property datasets associated with the selected species.
     Or you can upload your own peptide sequences in FASTA or TXT format, and the app will compute their properties for optimization.
-    *Note*: Upload files should contain valid peptide sequences. FASTA files must have proper headers, while TXT files should list one sequence per line.
+    *Note*: Upload files should contain *Standard amino acids peptide* sequences. FASTA files must have proper headers, while TXT files should list one sequence per line.
 
     ### 2. **Choose Optimization Algorithms**
     Select one or multiple multi-objective evolutionary algorithms (MOEAs), such as:
