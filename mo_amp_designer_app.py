@@ -43,7 +43,7 @@ body {
 </style>
 
 <div class="footer-text">
-    🚀 AMP Design App © 2025<br>
+    🚀 MO-AMP Design App © 2025<br>
 </div>
 """
 st.markdown(footer, unsafe_allow_html=True)
