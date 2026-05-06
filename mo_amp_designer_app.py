@@ -6,7 +6,8 @@ from BioAnalysis import Bio_analysis
 from Bio import SeqIO
 from io import StringIO
 from Protein_Encoding import PC_6
-
+from keras.models import load_model
+import numpy as np
 
 user_home = os.path.expanduser("~")
 
@@ -420,9 +421,7 @@ with main_tab1:
             st.info("No optimization results cached yet. Run optimization first.")
             can_proceed = False
 
-        if st.button("🚀 Run Optimization"):
-            dat = PC_6(merged_df_flipped["Sequence"], length=200)
-        st.write(dat)
+        all_fasta_str = ""
         for algo in algorithms:
             if algo not in st.session_state.optimization_results:
                 #st.warning(f"Skip {algo} because no results found.")
@@ -452,6 +451,10 @@ with main_tab1:
             fasta_str = ""
             for _, row in merged_df_flipped.iterrows():
                 fasta_str += f">{row['Sequence']}\n{row['Sequence']}\n"
+            handle = StringIO(fasta_str)
+            records = list(SeqIO.parse(handle, "fasta"))
+            seqs = [str(r.seq) for r in records]
+            st.write(seqs)
 
             cols = st.columns(3)
 
@@ -483,6 +486,14 @@ with main_tab1:
                 )
 
         
+        # output csv
+        st.download_button(
+                    label=f"⬇ Download all pareto predict",
+                    data=df,
+                    file_name=f"all pareto .csv",
+                    mime="text/plain",
+                    key=f"download_fasta_all pareto"
+                )
 
         st.markdown("---")
         if st.button("📊 Plot Results"):

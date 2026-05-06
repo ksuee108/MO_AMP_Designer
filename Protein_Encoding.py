@@ -11,7 +11,7 @@ import os
 
 # generate PC6 table
 def amino_encode_table_6():
-    path = os.path.join(os.path.dirname(__file__), '6-pc')
+    path = os.path.join(os.path.dirname(__file__), '6-pc.txt')
     df = pd.read_csv(path, sep=' ', index_col=0)
     H1 = (df['H1'] - np.mean(df['H1'])) / (np.std(df['H1'], ddof=1))
     V = (df['V'] - np.mean(df['V'])) / (np.std(df['V'], ddof=1))
@@ -40,10 +40,12 @@ def read_fasta(fasta_fname):
 # sequence padding (token:'X')
 def padding_seq(r,length=200,pad_value='X'):
     data={}
-    for key, value in r.items():
-        if len(r[key]) < length:
-            r[key] = [r[key]+pad_value*(length-len(r[key]))]
-        data[key] = r[key]
+    #print(r)
+    for key, value in enumerate(r):
+        #print(key, value)
+        if len(value) < length:
+            value = [value+pad_value*(length-len(value))]
+        data[key] = value
     return data
 
 
@@ -70,8 +72,8 @@ def encoding(data, method):
 
 # PC6 (input: fasta) 
 def PC_6(fasta_name, length=200):
-    r = read_fasta(fasta_name)
-    data = padding_seq(r, length)
+
+    data = padding_seq(fasta_name, length)
     dat = PC_encoding(data)
     return dat
 
