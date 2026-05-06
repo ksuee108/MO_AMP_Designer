@@ -6,7 +6,7 @@ from BioAnalysis import Bio_analysis
 from Bio import SeqIO
 from io import StringIO
 from Protein_Encoding import PC_6
-from keras.models import load_model
+#from keras.models import load_model
 import numpy as np
 
 user_home = os.path.expanduser("~")
@@ -486,15 +486,6 @@ with main_tab1:
                 )
 
         
-        # output csv
-        st.download_button(
-                    label=f"⬇ Download all pareto predict",
-                    data=df,
-                    file_name=f"all pareto .csv",
-                    mime="text/plain",
-                    key=f"download_fasta_all pareto"
-                )
-
         st.markdown("---")
         if st.button("📊 Plot Results"):
             results_dict = st.session_state.get("optimization_results", {})
