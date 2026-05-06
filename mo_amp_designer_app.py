@@ -5,6 +5,8 @@ import os
 from BioAnalysis import Bio_analysis
 from Bio import SeqIO
 from io import StringIO
+from Protein_Encoding import PC_6
+
 
 user_home = os.path.expanduser("~")
 
@@ -418,6 +420,9 @@ with main_tab1:
             st.info("No optimization results cached yet. Run optimization first.")
             can_proceed = False
 
+        if st.button("🚀 Run Optimization"):
+            dat = PC_6(merged_df_flipped["Sequence"], length=200)
+        st.write(dat)
         for algo in algorithms:
             if algo not in st.session_state.optimization_results:
                 #st.warning(f"Skip {algo} because no results found.")
@@ -477,6 +482,8 @@ with main_tab1:
                     key=f"download_final_{algo}"
                 )
 
+        
+
         st.markdown("---")
         if st.button("📊 Plot Results"):
             results_dict = st.session_state.get("optimization_results", {})
@@ -504,6 +511,7 @@ with main_tab1:
                             plot_pareto_fronts_many(algo, df, optimization_directions)
                         else:
                             plot_pareto_fronts_multi(algo, df, optimization_directions)
+                
 
         else:
             can_proceed = False
@@ -538,8 +546,8 @@ with main_tab3:
     ### 1. **Select Target Bacteria**
     Choose one or more pathogens from the sidebar.  
     The app will automatically load precomputed physicochemical property datasets associated with the selected species.
-                Or you can upload your own peptide sequences in FASTA or TXT format, and the app will compute their properties for optimization.
-                *Note*: Upload files should contain *Standard amino acids peptide* sequences. FASTA files must have proper headers, while TXT files should list one sequence per line.
+    Or you can upload your own peptide sequences in FASTA or TXT format, and the app will compute their properties for optimization.
+    *Note*: Upload files should contain *Standard amino acids peptide* sequences. FASTA files must have proper headers, while TXT files should list one sequence per line.
 
     ### 2. **Choose Optimization Algorithms**
     Select one or multiple multi-objective evolutionary algorithms (MOEAs), such as:
