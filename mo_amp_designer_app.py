@@ -421,7 +421,6 @@ with main_tab1:
             st.info("No optimization results cached yet. Run optimization first.")
             can_proceed = False
 
-        all_fasta_str = ""
         for algo in algorithms:
             if algo not in st.session_state.optimization_results:
                 #st.warning(f"Skip {algo} because no results found.")
@@ -451,10 +450,6 @@ with main_tab1:
             fasta_str = ""
             for _, row in merged_df_flipped.iterrows():
                 fasta_str += f">{row['Sequence']}\n{row['Sequence']}\n"
-            handle = StringIO(fasta_str)
-            records = list(SeqIO.parse(handle, "fasta"))
-            seqs = [str(r.seq) for r in records]
-            st.write(seqs)
 
             cols = st.columns(3)
 
@@ -485,7 +480,7 @@ with main_tab1:
                     key=f"download_final_{algo}"
                 )
 
-        
+
         st.markdown("---")
         if st.button("📊 Plot Results"):
             results_dict = st.session_state.get("optimization_results", {})
