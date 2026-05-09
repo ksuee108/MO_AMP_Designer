@@ -5,7 +5,7 @@ import os
 from BioAnalysis import Bio_analysis
 from Bio import SeqIO
 from io import StringIO
-from test2 import CNNModel, AutoEncoderRegressor, DenoisingAutoEncoderRegressor, VariationalAutoEncoderRegressor, ContrastiveEncoder
+from model import CNNModel, AutoEncoderRegressor, DenoisingAutoEncoderRegressor, VariationalAutoEncoderRegressor, ContrastiveEncoder
 import torch
 import peptides
 import numpy as np
