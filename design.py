@@ -409,9 +409,9 @@ class algorithms_setup():
         for algorithm, name in self.algorithms:
             print(name)
             if name in 'NSGA3':
-                res = minimize(self.problem, algorithm, seed=1, pf=self.pf, termination=('n_gen', self.generations), verbose=False)
+                res = minimize(self.problem, algorithm, seed=1, pf=self.pf, termination=('n_gen', self.generations), verbose=False, save_history=True)
             else:
-                res = minimize(self.problem, algorithm, ('n_gen', self.generations), pf=self.pf, verbose=False)
+                res = minimize(self.problem, algorithm, ('n_gen', self.generations), pf=self.pf, verbose=False, save_history=True)
             
             # debug
             # res_dict = pd.DataFrame(res.F)
