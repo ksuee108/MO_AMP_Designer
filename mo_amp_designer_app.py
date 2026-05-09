@@ -5,7 +5,7 @@ import os
 from BioAnalysis import Bio_analysis
 from Bio import SeqIO
 from io import StringIO
-from Protein_Encoding import PC_6
+
 #from keras.models import load_model
 import numpy as np
 
