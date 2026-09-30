@@ -9,8 +9,8 @@ from model import CNNModel, AutoEncoderRegressor, DenoisingAutoEncoderRegressor,
 import torch
 import peptides
 import numpy as np
-from sklearn.preprocessing import RobustScaler
 import joblib
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 scaler = joblib.load("model/scaler.pkl")
 label_encoder = joblib.load("model/label_encoder.pkl")
@@ -76,7 +76,7 @@ body {
 </style>
 
 <div class="footer-text">
-    🚀 MO-AMP Design App © 2025<br>
+    🚀 MO-AMP Design App © 2026<br>
 </div>
 """
 st.markdown(footer, unsafe_allow_html=True)
@@ -90,8 +90,7 @@ with main_tab1:
         st.header("Select Bacteria")
         Bacteria = st.multiselect(
             "Choose bacteria",
-            options=["E. faecium", "S. aureus", "K. pneumoniae", "A. baumannii", "P. aeruginosa", "E. coli", "Enterobacter spp",
-                     "B. subtilis", "P. vulgaris"]
+            options=["E. faecium", "S. aureus", "K. pneumoniae", "A. baumannii", "P. aeruginosa", "E. coli", "B. subtilis", "P. vulgaris"]
         )
 
         st.header("Upload Peptide Sequence")
