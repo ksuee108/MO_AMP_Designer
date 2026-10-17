@@ -111,6 +111,7 @@ class MyProblemWithData(Problem):
         self.sequence_length = sequence_length
         self.opt = opt
         self.constraint_dict_list = constraint_dict_list or []
+        self.evaluated = {}
 
     def _evaluate(self, X, out, *args, **kwargs):
         n_samples = X.shape[0]
@@ -118,13 +119,14 @@ class MyProblemWithData(Problem):
         G = np.zeros((n_samples, len(self.constraint_dict_list)))
 
         for i in range(n_samples):
-            props = compute_properties(decode_sequence(X[i]))
+            seq = decode_sequence(X[i])
+            props = compute_properties(seq)
+            self.evaluated.setdefault(seq, props)
 
             for k, name in enumerate(self.opt):
                 v = props[name]
                 F[i, k] = -v if is_maximize(name, self.optimization_directions[name]) else v
 
-            # pymoo Constraints
             for j, c in enumerate(self.constraint_dict_list):
                 v = float(props[c["Feature"]])
                 limit = float(c["Value"])
@@ -133,6 +135,7 @@ class MyProblemWithData(Problem):
         out["F"] = F
         if self.constraint_dict_list:
             out["G"] = G
+
 
 def amino_acid_percentage(algo: str, df: pd.DataFrame):
     """
@@ -311,14 +314,16 @@ class algorithms_setup():
         self.ref_targets = ref_targets
         self.seed = seed
 
-    def run_optimization(self):
-        self.problem = MyProblemWithData(
+    def _new_problem(self):
+        return MyProblemWithData(
             sequences=self.sequences,
             optimization_directions=self.optimization_directions,
             sequence_length=self.length,
             opt=self.opt,
-            constraint_dict_list=self.constraint_dict_list
+            constraint_dict_list=self.constraint_dict_list,
         )
+
+    def run_optimization(self):
         st.write("Maximized objectives will be multiplied by -1 to convert them into "
                  "minimization problems for optimization, and the results will be "
                  "restored when displayed.")
@@ -371,10 +376,11 @@ class algorithms_setup():
         
         for algorithm, name in self.algorithms:
             # print(name)
+            problem = self._new_problem()
             kwargs = dict(termination=('n_gen', self.generations),
                           verbose=False, save_history=False)
-            res = minimize(self.problem, algorithm, seed=self.seed, **kwargs)
-
+            res = minimize(problem, algorithm, seed=self.seed, **kwargs)
+            all_df = pd.DataFrame([{'Sequence': s, **p, 'model': name} for s, p in problem.evaluated.items()])
             # debug
             # res_dict = pd.DataFrame(res.F)
             # st.dataframe(res_dict)
@@ -399,10 +405,13 @@ class algorithms_setup():
             res_dict = pareto_df[list(self.optimization_directions.keys())].copy()
 
             merged_df = pareto_df.copy()
+            cols = ['Sequence'] + [c for c in merged_df.columns if c not in ('Sequence', 'model')] + ['model']
+            merged_df = merged_df[cols]
+            all_df = all_df[cols]
 
             st.session_state.optimization_results[name] = {
                 "res_dict": res_dict,
-                "pareto_df": pareto_df,
+                "pareto_df": all_df,
                 "merged_df": merged_df,
                 "directions": dict(self.optimization_directions),
             }
