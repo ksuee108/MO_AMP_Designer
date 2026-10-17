@@ -81,6 +81,11 @@ body {
 """
 st.markdown(footer, unsafe_allow_html=True)
 
+VALID_AA = set("ACDEFGHIKLMNPQRSTVWY")
+
+def is_valid_peptide(seq: str) -> bool:
+    return len(seq) > 0 and set(seq.upper()) <= VALID_AA
+
 with main_tab1:
     # ----------------------------
     # Sidebar inputs
@@ -96,6 +101,7 @@ with main_tab1:
         st.header("Upload Peptide Sequence")
         uploaded_file = st.file_uploader("Upload FASTA", type=["fasta", "fa"])
 
+        seed = st.number_input("Random seed", min_value=0, max_value=10000, value=42, step=1)
         seq = None
         bio_analysis = None
 
@@ -112,8 +118,11 @@ with main_tab1:
                 st.error("FASTA file is empty or invalid.")
             else:
                 for rec in records:
-                    seq = str(rec.seq)
-
+                    seq = str(rec.seq).strip().upper()
+                    if not is_valid_peptide(seq):
+                        st.warning(f"Skipped {rec.id}: contains non-standard amino acids.")
+                        continue
+                    
                     try:
                         bio_analysis = Bio_analysis(seq)
 
@@ -160,6 +169,7 @@ with main_tab1:
 
                     except Exception as e:
                         st.error(f"Error parsing Sequence {rec.id}: {e}")
+        
         all_features = pd.DataFrame(all_features)
 
         # ----------------------------
@@ -221,6 +231,28 @@ with main_tab1:
                 )
         st.success("Optimization Directions Set:")
         st.json(optimization_directions)
+
+        # ----------------------------
+        # Reference point (R-NSGA only)
+        # ----------------------------
+        ref_targets = None
+        if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")):
+            st.markdown("---")
+            st.header("Reference point (R-NSGA)")
+            st.caption(
+                "Enter the ideal value you want for each objective, in the original "
+                "units (e.g. Net charge = 5, not -5). R-NSGA-II/III will concentrate "
+                "the search around this point."
+            )
+            ref_targets = {}
+            for name in opt:
+                ref_targets[name] = st.number_input(
+                    f"Target for {name} ({optimization_directions[name]})",
+                    value=0.0,
+                    step=0.1,
+                    format="%.2f",
+                    key=f"ref_{name}"
+                )
         # ----------------------------
         # Constraints
         # ----------------------------
@@ -240,7 +272,8 @@ with main_tab1:
         constraint_feature = st.selectbox("Select a physicochemical property:", options)
         constraint_type = st.radio(
             "Constraint type:",
-            [f"(Maximum limit) ≤ {constraint_feature}", f"{constraint_feature} ≥ (Minimum limit)"]
+            [f"{constraint_feature} ≤ (Maximum limit)",
+             f"{constraint_feature} ≥ (Minimum limit)"]
         )
         constraint_value = st.number_input(
             f"Enter limit value for {constraint_feature}:",
@@ -284,45 +317,44 @@ with main_tab1:
         # ----------------------------
         st.markdown("---")
 
-        if uploaded_file is not None:
-            st.subheader("Uploaded peptide data preview")
-            st.dataframe(all_features)
-            df = pd.DataFrame(all_features)
-            
-            if len(Bacteria) > 0:
-                # 合併選擇的細菌 CSV
-                dfs = [df]
-                for b in Bacteria:
-                    try:
-                        temp_df = pd.read_csv(f"dataset/biopython-{b}.csv")
-                        dfs.append(temp_df)
-                    except FileNotFoundError as e:
-                        st.error(f"Missing file for {b}: {e}")
-                df = pd.concat(dfs, ignore_index=True).drop_duplicates(subset=['Sequence'])
-                st.success(f"Merged uploaded data with selected bacteria: {', '.join(Bacteria)}")
-            st.dataframe(df)
-            
-        else:
-            # Initialize session state for dataframe
-            if "loaded_df" not in st.session_state:
-                st.session_state.loaded_df = None
-            
-            # Load data only if not cached
-            if st.session_state.loaded_df is None:
-                try:
-                    df = pd.read_csv(os.path.join("dataset", f"biopython-{Bacteria[0]}.csv"))
-                    for i in range(1, len(Bacteria)):
-                        temp_df = pd.read_csv(os.path.join("dataset", f"biopython-{Bacteria[i]}.csv"))
-                        df = pd.concat([df, temp_df], ignore_index=True).drop_duplicates(subset=['Sequence'])
-                    st.session_state.loaded_df = df
-                    st.success(f"Loaded data for {', '.join(Bacteria)} with {len(df)} Sequences.")
-                except FileNotFoundError as e:
-                    st.error(f"Missing file: {e}")
-                    can_proceed = False
-            else:
-                df = st.session_state.loaded_df
-                st.success(f"Using cached data for {', '.join(Bacteria)} with {len(df)} Sequences.")
+        upload_name = uploaded_file.name if uploaded_file is not None else None
+        cache_key = (tuple(sorted(Bacteria)), upload_name)
 
+        if st.session_state.get("loaded_key") != cache_key:
+            dfs = []
+
+            # 1) user-uploaded FASTA file
+            if uploaded_file is not None and not all_features.empty:
+                dfs.append(all_features)
+
+            # 2) selected bacteria datasets
+            for b in Bacteria:
+                try:
+                    dfs.append(pd.read_csv(os.path.join("dataset", f"biopython-{b}.csv")))
+                except FileNotFoundError as e:
+                    st.error(f"Missing file for {b}: {e}")
+
+            if dfs:
+                df = (pd.concat(dfs, ignore_index=True)
+                        .drop_duplicates(subset=["Sequence"])
+                        .reset_index(drop=True))
+                st.session_state.loaded_df = df
+                st.session_state.loaded_key = cache_key
+            else:
+                df = None
+                st.session_state.loaded_df = None
+                st.session_state.loaded_key = None
+        else:
+            df = st.session_state.loaded_df
+
+        data_ready = df is not None and not df.empty
+        if data_ready:
+            sources = []
+            if upload_name:
+                sources.append(f"uploaded file ({upload_name})")
+            if Bacteria:
+                sources.append(", ".join(Bacteria))
+            st.success(f"Loaded {len(df)} sequences from: {' + '.join(sources)}")
             st.subheader("Loaded peptide data preview")
             st.dataframe(df.head())
         
@@ -330,7 +362,12 @@ with main_tab1:
         # Run optimization
         # ----------------------------
         st.markdown("---")
-        if st.button("🚀 Run Optimization"):
+        data_ready = df is not None and not df.empty
+        if not data_ready:
+            st.error("No peptide data available. Select bacteria or upload a valid FASTA.")
+        ready = data_ready and len(opt) >= 2
+        
+        if st.button("🚀 Run Optimization", disabled=not ready):
             with st.spinner("Running optimization... This may take a few minutes."):
                 try:
                     # algorithm setup
@@ -342,7 +379,9 @@ with main_tab1:
                         optimization_directions=optimization_directions,
                         length=length,
                         opt=opt,
-                        constraint_dict_list=constraint_dict_list
+                        constraint_dict_list=constraint_dict_list,
+                        ref_targets=ref_targets,
+                        seed=seed
                     )
                     setup.run_optimization()
                     setup.run()
@@ -370,13 +409,6 @@ with main_tab1:
                     res_dict_flipped = pd.DataFrame(results["res_dict"])
                     pareto_df_flipped = pd.DataFrame(results["pareto_df"])
                     merged_df_flipped = pd.DataFrame(results["merged_df"])
-
-                    # Gravy 最大化處理
-                    if "Gravy" in optimization_directions and optimization_directions["Gravy"] == 'hydrophobicity':
-                        for df in [res_dict_flipped, pareto_df_flipped, merged_df_flipped]:
-                            if "Gravy" in df.columns:
-                                df["Gravy"] = -df["Gravy"]
-
                     tab1, tab2, tab3 = st.tabs(["Objectives", "All Results", "Merged Data"])
 
                     with tab1:
@@ -395,23 +427,30 @@ with main_tab1:
             can_proceed = False
 
         for algo in algorithms:
-            if algo not in st.session_state.optimization_results:
-                #st.warning(f"Skip {algo} because no results found.")
+            entry = st.session_state.optimization_results.get(algo)
+            if entry is None:
                 continue
+            pareto_out = entry["pareto_df"]
+            merged_out = entry["merged_df"]
 
-            if "merged_df_flipped" not in locals() or merged_df_flipped is None:
+            fasta_str = "".join(
+                f">{algo}_{i+1}\n{row['Sequence']}\n"
+                for _, row in merged_out.iterrows()
+            )
+            cols = st.columns(3)
+
+            #if "merged_df_flipped" not in locals() or merged_df_flipped is None:
                 #st.warning(f"Skip {algo} because merged_df_flipped is not defined.")
-                continue
+            #    continue
 
-            if "pareto_df_flipped" not in locals() or pareto_df_flipped is None:
+            #if "pareto_df_flipped" not in locals() or pareto_df_flipped is None:
                 #st.warning(f"Skip {algo} because pareto_df_flipped is not defined.")
-                continue
+            #    continue
             
             # -------- Local file save (for local execution) --------
             # fasta_path = os.path.join(user_home, f"{algo}.fasta")
             # with open(fasta_path, "w") as f:
-            #    for _, row in merged_df_flipped.iterrows():
-            #        f.write(f">{row['Sequence']}\n{row['Sequence']}\n")
+            #    f.write(fasta_str)
 
             # pareto_df_flipped.to_csv(os.path.join(user_home, f"{algo}_all_optimize_result.csv"), index=False)
             # merged_df_flipped.to_csv(os.path.join(user_home, f"{algo}_optimize_result.csv"), index=False)
@@ -420,12 +459,6 @@ with main_tab1:
             # st.info(f"FASTA saved at file: {fasta_path}")
 
             # -------- Web download --------
-            fasta_str = ""
-            for _, row in merged_df_flipped.iterrows():
-                fasta_str += f">{row['Sequence']}\n{row['Sequence']}\n"
-
-            cols = st.columns(3)
-
             with cols[0]:
                 st.download_button(
                     label=f"⬇ Download {algo} FASTA",
@@ -438,7 +471,7 @@ with main_tab1:
             with cols[1]:
                 st.download_button(
                     label=f"⬇ Download {algo} all optimization results",
-                    data=pareto_df_flipped.to_csv(index=False),
+                    data=pareto_out.to_csv(index=False),
                     file_name=f"{algo}_all_optimize_result.csv",
                     mime="text/csv",
                     key=f"download_all_{algo}"
@@ -447,74 +480,69 @@ with main_tab1:
             with cols[2]:
                 st.download_button(
                     label=f"⬇ Download {algo} final optimized results",
-                    data=merged_df_flipped.to_csv(index=False),
+                    data=merged_out.to_csv(index=False),
                     file_name=f"{algo}_optimize_result.csv",
                     mime="text/csv",
                     key=f"download_final_{algo}"
                 )
 
-
         st.markdown("---")
         if st.button("📊 Plot Results"):
+            st.session_state.show_plots = True
+
+        if st.session_state.get("show_plots"):
             results_dict = st.session_state.get("optimization_results", {})
             if not results_dict:
                 st.warning("No optimization results found. Run optimization first.")
             else:
                 for algo in algorithms:
-                    result_entry = results_dict.get(algo)
-                    if result_entry is None:
-                        st.warning(f"No optimized results for {algo}")
+                    entry = st.session_state.optimization_results.get(algo)
+                    if entry is None:
                         continue
 
-                    # 選擇你要繪圖的 DataFrame
-                    # 比如用 merged_df
-                    df = result_entry.get("merged_df")
-                    if df is None or not isinstance(df, pd.DataFrame) or df.empty:
+                    plot_df = entry.get("merged_df")
+                    if plot_df is None or not isinstance(plot_df, pd.DataFrame) or plot_df.empty:
                         st.warning(f"No valid DataFrame for {algo}")
                         continue
 
                     with st.spinner(f"Plotting results for {algo}..."):
                         st.markdown(f"### 📈 Pareto Front Visualization ({algo})")
-                        amino_acid_percentage(algo, df)
+                        amino_acid_percentage(algo, plot_df)
+                        
+                        directions = entry.get("directions", optimization_directions)
 
-                        if len(optimization_directions) > 3:
-                            plot_pareto_fronts_many(algo, df, optimization_directions)
+                        if len(directions) > 3:
+                            plot_pareto_fronts_many(algo, plot_df, directions)
                         else:
-                            plot_pareto_fronts_multi(algo, df, optimization_directions)
+                            plot_pareto_fronts_multi(algo, plot_df, directions)
                 
-
         else:
             can_proceed = False
 
 with main_tab2:
     st.header("AMP MIC Prediction")
-    uploaded_file = st.file_uploader(
-        "Upload FASTA",
-        type=["fasta", "fa"]
-    )
+    pred_file = st.file_uploader("Upload FASTA", type=["fasta", "fa"], key="predict_upload")
 
     # =====================================================
     # Sequence parser
     # =====================================================
 
-    def extract_sequences(uploaded_file):
+    def extract_sequences(pred_file):
         sequences = []
-        if uploaded_file is None:
+        if pred_file is None:
             return sequences
 
-        # -------------------------------------------------
-        # FASTA
-        # -------------------------------------------------
-
-        uploaded_file.seek(0)
-        fasta_str = uploaded_file.read().decode("utf-8")
+        pred_file.seek(0)
+        fasta_str = pred_file.read().decode("utf-8")
         fasta_io = StringIO(fasta_str)
         records = list(SeqIO.parse(fasta_io, "fasta"))
 
         for rec in records:
             seq = str(rec.seq).strip().upper()
-            if len(seq) > 0:
+            if is_valid_peptide(seq):
                 sequences.append(seq)
+            else:
+                st.warning(f"Skipped {rec.id}: contains non-standard amino acids.")
 
         return sequences
 
@@ -566,12 +594,12 @@ with main_tab2:
     # Prediction
     # =====================================================
 
-    if uploaded_file is not None:
+    if pred_file is not None:
         # -------------------------------------------------
         # extract seq
         # -------------------------------------------------
 
-        sequences = extract_sequences(uploaded_file)
+        sequences = extract_sequences(pred_file)
         if len(sequences) == 0:
             st.error("No valid sequences found.")
         else:

@@ -215,6 +215,6 @@ class Bio_analysis():
             'S': 0.3, 'T': -0.4, 'W': -3.4, 'Y': -2.3, 'V': -1.5
         }
 
-        hydrophobicity_sum = sum(hydrophobicity_values[aa] for aa in self.seq)
-        hydrophilicity_sum = sum(hydrophilicity_values[aa] for aa in self.seq)
+        hydrophobicity_sum = sum(hydrophobicity_values.get(aa, 0) for aa in self.seq)
+        hydrophilicity_sum = sum(hydrophilicity_values.get(aa, 0) for aa in self.seq)
         return (hydrophobicity_sum / len(self.seq)) - (hydrophilicity_sum / len(self.seq))

@@ -18,126 +18,121 @@ from pymoo.visualization.pcp import PCP
 from pymoo.visualization.petal import Petal
 from pymoo.visualization.radviz import Radviz
 from pymoo.visualization.scatter import Scatter
+from pymoo.operators.sampling.rnd import IntegerRandomSampling
+from pymoo.operators.crossover.sbx import SBX
+from pymoo.operators.mutation.pm import PM
+from pymoo.operators.repair.rounding import RoundingRepair
 
 from BioAnalysis import Bio_analysis
 import matplotlib.pyplot as plt
 import streamlit as st
 from mpl_toolkits.mplot3d import Axes3D
+from math import comb
+
+AA_STR = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
+          'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+
+
+def int_ops():
+    return dict(
+        sampling=IntegerRandomSampling(),
+        crossover=SBX(prob=1.0, eta=3.0, vtype=float, repair=RoundingRepair()),
+        mutation=PM(eta=3.0, vtype=float, repair=RoundingRepair()),
+        eliminate_duplicates=True,
+    )
+
+def auto_partitions(n_obj: int, max_points: int) -> int:
+    p = 1
+    while comb(p + n_obj, n_obj - 1) <= max_points:
+        p += 1
+    return p
+
+def is_maximize(name: str, mode: str) -> bool:
+    """Gravy: hydrophobicity = Maximize GRAVY；Other: Maximize = Maximize"""
+    if name == "Gravy":
+        return mode.lower() == "hydrophobicity"
+    return mode.lower() == "maximize"
+
+
+def decode_sequence(x) -> str:
+    return ''.join(AA_STR[int(round(v))] for v in x)
+
+from functools import lru_cache
+
+@lru_cache(maxsize=50000)
+def _props_cached(peptide: str) -> tuple:
+    return tuple(_compute_properties_raw(peptide).items())
+
+def compute_properties(peptide: str) -> dict:
+    return dict(_props_cached(peptide))
+
+def _compute_properties_raw(peptide: str) -> dict:
+    """compute all properties at once (secondary structure is computed only once)"""
+    ba = Bio_analysis(peptide)
+    helix, turn, sheet = ba.get_secondary_structure_fraction()
+    return {
+        'Gravy': ba.get_gravy(),
+        'Instability Index': ba.get_instability_index(),
+        'Aliphatic Index': ba.get_aliphatic_index(),
+        'Isoelectric point': ba.get_isoelectric_point(),
+        'Net charge': ba.get_net_charge(),
+        'Molecular Weight': ba.get_molecular_weight(),
+        'Charge at pH': ba.get_charge_at_pH(),
+        'Aromaticity': ba.get_aromaticity(),
+        'Secondary structure fraction Helix': helix,
+        'Secondary structure fraction Turn': turn,
+        'Secondary structure fraction Sheet': sheet,
+        'Boman Index': ba.get_boman_index(),
+        'Amphipathicity': ba.get_amphipathicity(),
+        'Correlation': ba.get_auto_correlation(),
+        'Covariance': ba.get_auto_covariance(),
+        'Hydrophobic Moenet': ba.get_hydrophobic_moenet(),
+        'Mass': ba.get_mass(),
+        'Mz': ba.get_mz(),
+        'Sequence Length': ba.get_sequenceLength(),
+    }
+
+def build_ref_points(opt, directions, targets: dict) -> np.ndarray:
+    """targets: {'Net charge': 5, 'Instability Index': 20}, return shape (1, n_obj)"""
+    pt = []
+    for name in opt:
+        v = float(targets[name])
+        pt.append(-v if is_maximize(name, directions[name]) else v)
+    return np.array([pt])
 
 class MyProblemWithData(Problem):
-    def __init__(self, sequences, optimization_directions=None, sequence_length=12, opt=2, constraint_dict_list=None, *args, **kwargs):
-        super().__init__(n_var=sequence_length, n_obj=len(opt), n_constr=6, xl=0, xu=20)
+    def __init__(self, sequences, optimization_directions=None, sequence_length=12,
+                 opt=2, constraint_dict_list=None, *args, **kwargs):
+        n_constr = len(constraint_dict_list) if constraint_dict_list else 0
+        super().__init__(n_var=sequence_length, n_obj=len(opt),
+                         n_constr=n_constr, xl=0, xu=19, vtype=int)
         self.sequences = sequences
-        self.pareto_sequences = []
         self.optimization_directions = optimization_directions
         self.sequence_length = sequence_length
         self.opt = opt
-        self.constraint_dict_list = constraint_dict_list
-        self.combinations = []
+        self.constraint_dict_list = constraint_dict_list or []
 
     def _evaluate(self, X, out, *args, **kwargs):
-        X = X.astype(np.float64)
         n_samples = X.shape[0]
-        objectives = np.zeros((n_samples, len(self.opt)), dtype=np.float64)
-        constraints = np.zeros((n_samples, 6), dtype=np.float64)
-        aa_str = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
-        
-        new_combinations = [''.join([aa_str[int(xi)] for xi in X[i]]) for i in range(n_samples)]
-        self.combinations.extend(new_combinations)
+        F = np.zeros((n_samples, len(self.opt)))
+        G = np.zeros((n_samples, len(self.constraint_dict_list)))
 
-        for i, peptide in enumerate(new_combinations):
-            bio_analysis = Bio_analysis(peptide)
- 
-            Gravy = bio_analysis.get_gravy()
-            instability_index = bio_analysis.get_instability_index()
-            Aliphatic_Index = bio_analysis.get_aliphatic_index()
-            Boman_Index = bio_analysis.get_boman_index()
-            isoelectric_point = bio_analysis.get_isoelectric_point()
-            net_charge = bio_analysis.get_net_charge()
-            molecular_weight = bio_analysis.get_molecular_weight()
-            charge_at_pH = bio_analysis.get_charge_at_pH()
-            aromaticity = bio_analysis.get_aromaticity()
-            secondary_structure_fraction_Helix = bio_analysis.get_secondary_structure_fraction()[0]
-            secondary_structure_fraction_Turn = bio_analysis.get_secondary_structure_fraction()[1]
-            secondary_structure_fraction_Sheet = bio_analysis.get_secondary_structure_fraction()[2]
-            sequenceLength = bio_analysis.get_sequenceLength()
-            amphipathicity = bio_analysis.get_amphipathicity()
-            correlation = bio_analysis.get_auto_correlation()
-            covariance = bio_analysis.get_auto_covariance()
-            hydrophobic_moenet = bio_analysis.get_hydrophobic_moenet()
-            mass = bio_analysis.get_mass()
-            mz = bio_analysis.get_mz()
-            
+        for i in range(n_samples):
+            props = compute_properties(decode_sequence(X[i]))
 
-            physicochemical_properties = {
-            'Gravy': Gravy,
-            'Instability Index': instability_index,
-            'Aliphatic Index': Aliphatic_Index,
-            'Isoelectric point': isoelectric_point,
-            'Net charge': net_charge, 
-            'Molecular Weight': molecular_weight,
-            'Charge at pH': charge_at_pH,
-            'Aromaticity': aromaticity,
-            'Secondary structure fraction Helix': secondary_structure_fraction_Helix,
-            'Secondary structure fraction Turn': secondary_structure_fraction_Turn,
-            'Secondary structure fraction Sheet': secondary_structure_fraction_Sheet,
-            'Boman Index': Boman_Index,
-            'Amphipathicity': amphipathicity,
-            'Correlation': correlation,
-            'Covariance': covariance,
-            'Hydrophobic Moenet': hydrophobic_moenet,
-            'Mass': mass,
-            'Mz': mz,}
-            
-            # Set objective values according to selected objectives
-            for obj_idx, obj_name in enumerate(self.opt):
-                value = physicochemical_properties[obj_name]
-                if self.optimization_directions[obj_name] == 'Minimize':
-                    objectives[i, obj_idx] = value
-                else:  # Maximize
-                    objectives[i, obj_idx] = -value
+            for k, name in enumerate(self.opt):
+                v = props[name]
+                F[i, k] = -v if is_maximize(name, self.optimization_directions[name]) else v
 
-            # Store objective values and sequence
-            self.pareto_sequences.append({
-                'Sequence': peptide,
-                'Gravy': Gravy,
-                'Instability Index': instability_index,
-                'Aliphatic Index': Aliphatic_Index,
-                'Isoelectric point': isoelectric_point,
-                'Net charge': net_charge, 
-                'Molecular Weight': molecular_weight,
-                'Charge at pH': charge_at_pH,
-                'Aromaticity': aromaticity,
-                'Secondary structure fraction Helix': secondary_structure_fraction_Helix,
-                'Secondary structure fraction Turn': secondary_structure_fraction_Turn,
-                'Secondary structure fraction Sheet': secondary_structure_fraction_Sheet,
-                'Boman Index': Boman_Index,
-                'Amphipathicity': amphipathicity,
-                'Correlation': correlation,
-                'Covariance': covariance,
-                'Hydrophobic Moenet': hydrophobic_moenet,
-                'Mass': mass,
-                'Mz': mz,
-                'Sequence Length': sequenceLength
-            })
-            
-            # Constraints setup (example)
-            if self.constraint_dict_list:
-                for j, constraint in enumerate(self.constraint_dict_list):
-                    feature_name = constraint.get("Feature", "Gravy")
-                    constraint_type = constraint.get("Type", "max")
-                    constraint_value = float(constraint.get("Value"))
+            # pymoo Constraints
+            for j, c in enumerate(self.constraint_dict_list):
+                v = float(props[c["Feature"]])
+                limit = float(c["Value"])
+                G[i, j] = (v - limit) if c["Type"] == "max" else (limit - v)
 
-                    objective = float(physicochemical_properties.get(feature_name))
-
-                    if constraint_type == "max":
-                        constraints[i, j] = constraint_value - objective
-                    else:
-                        constraints[i, j] = objective - constraint_value
-            else:
-                pass
-        out["F"] = objectives
-        out["G"] = constraints
+        out["F"] = F
+        if self.constraint_dict_list:
+            out["G"] = G
 
 def amino_acid_percentage(algo: str, df: pd.DataFrame):
     """
@@ -183,6 +178,50 @@ def amino_acid_percentage(algo: str, df: pd.DataFrame):
     st.pyplot(fig)
     plt.close(fig)
 
+def pick_best_index(df, optimization_directions):
+    """挑出離理想點最近的解（統一成最小化後正規化）"""
+    objectives = list(optimization_directions.keys())
+    X = df[objectives].values.astype(float)
+    for k, name in enumerate(objectives):
+        if is_maximize(name, optimization_directions[name]):
+            X[:, k] = -X[:, k]
+    Xn = MinMaxScaler().fit_transform(X)
+    return int(np.argmin(np.linalg.norm(Xn, axis=1)))
+
+
+def plot_scatter_matrix(algo, df, optimization_directions):
+    objectives = list(optimization_directions.keys())
+    missing = [o for o in objectives if o not in df.columns]
+    if missing:
+        st.error(f"{algo} missing objectives: {missing}")
+        return
+
+    X = df[objectives].values
+    n = len(objectives)
+    best = pick_best_index(df, optimization_directions)
+
+    fig, axes = plt.subplots(n, n, figsize=(2.6 * n, 2.2 * n), squeeze=False)
+
+    for i in range(n):
+        for j in range(n):
+            ax = axes[i, j]
+            if i == j:
+                ax.text(0.5, 0.5, objectives[i], ha="center", va="center",
+                        fontsize=11, wrap=True)
+                ax.set_xticks([])
+                ax.set_yticks([])
+            else:
+                ax.scatter(X[:, j], X[:, i], s=12, color="tab:blue")
+                ax.scatter(X[best, j], X[best, i], s=40, color="red", zorder=3)
+                ax.set_xlabel(objectives[j], fontsize=8)
+                ax.set_ylabel(objectives[i], fontsize=8)
+                ax.tick_params(labelsize=7)
+
+    fig.suptitle(f"Pareto-optimal Solutions - {algo}", fontsize=12)
+    fig.tight_layout()
+    st.pyplot(fig)
+    plt.close(fig)
+
 def plot_pareto_fronts_many(algo: str, df: pd.DataFrame, optimization_directions: dict):
     """
     Visualize Pareto-optimal solutions using parallel coordinates and scatter matrix.
@@ -200,11 +239,6 @@ def plot_pareto_fronts_many(algo: str, df: pd.DataFrame, optimization_directions
         return
 
     plot_df = df[selected_cols].copy()
-
-    # Handle maximization → minimization consistency
-    for feature, mode in optimization_directions.items():
-        if mode.lower() == "maximize":
-            plot_df[feature] = -plot_df[feature]
 
     X = plot_df.values
     n_samples, n_objectives = X.shape
@@ -231,36 +265,7 @@ def plot_pareto_fronts_many(algo: str, df: pd.DataFrame, optimization_directions
 
     # ---------- Scatter Matrix ----------
     st.markdown(f"### 🔹 Scatter Matrix Plot ({algo})")
-
-    fig, axes = plt.subplots(n_objectives, n_objectives, figsize=(14, 14))
-
-    for i in range(n_objectives):
-        for j in range(n_objectives):
-            ax = axes[i, j]
-
-            if i == j:
-                ax.text(0.5, 0.5, selected_cols[i],
-                        ha="center", va="center", fontsize=12, fontweight="bold")
-                ax.set_xticks([])
-                ax.set_yticks([])
-            else:
-                ax.scatter(
-                    X[:, j], X[:, i],
-                    c="red", alpha=0.6, s=40, edgecolors="black"
-                )
-
-            if i == n_objectives - 1:
-                ax.set_xlabel(selected_cols[j])
-            if j == 0:
-                ax.set_ylabel(selected_cols[i])
-
-            ax.grid(alpha=0.3)
-
-    fig.suptitle(f"Pairwise Objective Relationships – {algo}",
-                 fontsize=16, fontweight="bold")
-    plt.tight_layout()
-    st.pyplot(fig)
-    plt.close(fig)
+    plot_scatter_matrix(algo, plot_df, optimization_directions)
 
 def plot_pareto_fronts_multi(algo: str, df: pd.DataFrame, optimization_directions: dict):
     """
@@ -280,183 +285,125 @@ def plot_pareto_fronts_multi(algo: str, df: pd.DataFrame, optimization_direction
 
     plot_df = df[objectives].copy()
 
-    # Ensure minimization direction
-    for feature, mode in optimization_directions.items():
-        if mode.lower() == "maximize":
-            plot_df[feature] = -plot_df[feature]
-
     X = plot_df.values
-    n_obj = len(objectives)
+    plot = Scatter(tight_layout=True, labels=objectives)
+    plot.add(X, s=30, color="red")
+    plot.do()
+    st.pyplot(plot.fig)
+    plt.close(plot.fig)
 
-    # ---------- 2D ----------
-    if n_obj == 2:
-        fig, ax = plt.subplots(figsize=(7, 6))
-        ax.scatter(X[:, 0], X[:, 1], c="red", alpha=0.7, s=40)
-        ax.set_xlabel(objectives[0])
-        ax.set_ylabel(objectives[1])
-        ax.set_title(f"2D Pareto Front – {algo}")
-        ax.grid(alpha=0.3)
-        st.pyplot(fig)
-        plt.close(fig)
-
-    # ---------- 3D ----------
-    elif n_obj == 3:
-        
-        fig = plt.figure(figsize=(8, 6))
-        ax = fig.add_subplot(111, projection="3d")
-        ax.scatter(X[:, 0], X[:, 1], X[:, 2],
-                   c="red", alpha=0.7, s=40)
-        ax.set_xlabel(objectives[0])
-        ax.set_ylabel(objectives[1])
-        ax.set_zlabel(objectives[2])
-        ax.set_title(f"3D Pareto Front – {algo}")
-        st.pyplot(fig)
-        plt.close(fig)
-
-    # ---------- High-dimensional (fallback) ----------
-    else:
-        st.info("More than 3 objectives detected → using parallel coordinates")
-        from sklearn.preprocessing import MinMaxScaler
-
-        scaler = MinMaxScaler()
-        X_scaled = scaler.fit_transform(X)
-
-        fig, ax = plt.subplots(figsize=(12, 5))
-        for i in range(X_scaled.shape[0]):
-            ax.plot(range(n_obj), X_scaled[i],
-                    color="tab:blue", alpha=0.4)
-
-        ax.set_xticks(range(n_obj))
-        ax.set_xticklabels(objectives, rotation=45, ha="right")
-        ax.set_ylabel("Normalized Objective Value")
-        ax.set_title(f"Parallel Coordinates – {algo}")
-        ax.grid(alpha=0.3)
-        st.pyplot(fig)
-        plt.close(fig)
+    if len(objectives) == 3:
+        plot_scatter_matrix(algo, plot_df, optimization_directions)
 
 # ----------------------------
 class algorithms_setup():
-    def __init__(self, df, algorithms_list, pop_size, generations, optimization_directions, length, opt, constraint_dict_list):
-        self.sequences = df['Sequence']
-        self.algorithms_list = algorithms_list
+    def __init__(self, df, algorithms_list, pop_size, generations,
+                 optimization_directions, length, opt, constraint_dict_list,
+                 ref_targets=None, seed=42):
+        self.sequences = df['Sequence'] if df is not None and 'Sequence' in df.columns else None
+        self.algorithms_list = list(algorithms_list)
         self.pop_size = pop_size
         self.generations = generations
         self.optimization_directions = optimization_directions
         self.length = length
         self.opt = opt
         self.constraint_dict_list = constraint_dict_list
+        self.ref_targets = ref_targets
+        self.seed = seed
 
     def run_optimization(self):
-        # Initialize problem object
         self.problem = MyProblemWithData(
-                sequences=self.sequences,
-                optimization_directions=self.optimization_directions,
-                sequence_length=self.length,
-                opt=self.opt,
-                constraint_dict_list=self.constraint_dict_list
-            )
-        st.write("The package program is requesting that multiply an objective that is supposed to be maximized by −1 and minimized for valuation.")
-        self.pf = self.problem.pareto_front()
+            sequences=self.sequences,
+            optimization_directions=self.optimization_directions,
+            sequence_length=self.length,
+            opt=self.opt,
+            constraint_dict_list=self.constraint_dict_list
+        )
+        st.write("Maximized objectives will be multiplied by -1 to convert them into "
+                 "minimization problems for optimization, and the results will be "
+                 "restored when displayed.")
 
-        # reference directions
-        ref_dirs = get_reference_directions("das-dennis", n_dim=len(self.opt), n_partitions = 50)
+        # Das-Dennis reference directions (NSGA-III / U-NSGA-III)
+        n_partitions = auto_partitions(len(self.opt), self.pop_size)
+        ref_dirs = get_reference_directions(
+            "das-dennis", n_dim=len(self.opt), n_partitions=n_partitions
+        )
 
-        n_ref_points = len(ref_dirs)
+        # User-defined reference point (R-NSGA-II / R-NSGA-III)
+        ref_pts = None
+        wants_r = [a for a in ("R-NSGA-II", "R-NSGA-III") if a in self.algorithms_list]
+        if wants_r:
+            if self.ref_targets and all(n in self.ref_targets for n in self.opt):
+                ref_pts = build_ref_points(
+                    self.opt, self.optimization_directions, self.ref_targets
+                )
+            else:
+                st.warning("R-NSGA-II / R-NSGA-III need a target value for every "
+                           "objective. They are skipped.")
+                self.algorithms_list = [a for a in self.algorithms_list if a not in wants_r]
 
-        # Suggested pop_per_ref_point
-        suggested_pop_per_ref = 500 // n_ref_points
-        if suggested_pop_per_ref < 1:
-            suggested_pop_per_ref = 1
+        # Build lazily so that only the selected algorithms are instantiated
+        factories = {
+            'NSGA-II':     lambda: NSGA2(pop_size=self.pop_size, **int_ops()),
+            'NSGA-III':    lambda: NSGA3(ref_dirs=ref_dirs, pop_size=self.pop_size, **int_ops()),
+            'U-NSGA-III':  lambda: UNSGA3(ref_dirs=ref_dirs, pop_size=self.pop_size, **int_ops()),
+            'R-NSGA-II':   lambda: RNSGA2(ref_points=ref_pts, pop_size=self.pop_size, **int_ops()),
+            'R-NSGA-III':  lambda: RNSGA3(ref_points=ref_pts,
+                                          pop_per_ref_point=max(1, self.pop_size // len(ref_pts)),
+                                          **int_ops()),
+            'AGE-MOEA':    lambda: AGEMOEA(pop_size=self.pop_size, **int_ops()),
+            'AGE-MOEA-II': lambda: AGEMOEA2(pop_size=self.pop_size, **int_ops()),
+        }
+        self.algorithms = [
+            (make(), name) for name, make in factories.items()
+            if name in self.algorithms_list
+        ]
+        #print(self.algorithms)
 
-        try:
-            
-            for feature, mode in self.optimization_directions.key():
-                if feature == "Gravy":
-                    if mode.lower() in ["hydrophobicity"]:
-                        self.problem.flip_objective(feature)
-                else:
-                    if mode.lower() == "maximize":
-                        self.problem.flip_objective(feature)
-                        
-            
-            all_algorithms = [[NSGA2(pop_size=self.pop_size),'NSGA-II'],
-                              [NSGA3(ref_dirs = ref_dirs,pop_size=self.pop_size),'NSGA-III'], 
-                              [UNSGA3(ref_dirs = ref_dirs,pop_size=self.pop_size),'U-NSGA-III'], 
-                              [RNSGA2(ref_points = ref_dirs, pop_size=self.pop_size),'R-NSGA-II'], 
-                              [RNSGA3(ref_points=ref_dirs, pop_per_ref_point=self.pop_size), 'R-NSGA-III'], 
-                              [AGEMOEA(pop_size=self.pop_size), 'AGE-MOEA'], 
-                              [AGEMOEA2(pop_size=self.pop_size), 'AGE-MOEA-II']]
-            self.algorithms = [algo for algo in all_algorithms if algo[1] in self.algorithms_list]
-            print(self.algorithms)
-        except:
-            all_algorithms = [[NSGA2(pop_size=self.pop_size),'NSGA-II'],
-                               [NSGA3(ref_dirs = ref_dirs,pop_size=self.pop_size),'NSGA-III'], 
-                               [UNSGA3(ref_dirs = ref_dirs,pop_size=self.pop_size),'U-NSGA-III'], 
-                               [RNSGA2(ref_points = ref_dirs, pop_size=self.pop_size),'R-NSGA-II'], 
-                               [RNSGA3(ref_points=ref_dirs, pop_per_ref_point=suggested_pop_per_ref), 'R-NSGA-III'],
-                               [AGEMOEA(pop_size=self.pop_size), 'AGE-MOEA'], 
-                               [AGEMOEA2(pop_size=self.pop_size), 'AGE-MOEA-II']]
-            self.algorithms = [algo for algo in all_algorithms if algo[1] in self.algorithms_list]
-            print(self.algorithms)
 
     def run(self):
         st.info("Starting optimization...")
+        st.session_state.optimization_results = {}
         
         # Initialize session state for results
         if "optimization_results" not in st.session_state:
             st.session_state.optimization_results = {}
         
         for algorithm, name in self.algorithms:
-            print(name)
-            if name in 'NSGA3':
-                res = minimize(self.problem, algorithm, seed=1, pf=self.pf, termination=('n_gen', self.generations), verbose=False, save_history=True)
-            else:
-                res = minimize(self.problem, algorithm, ('n_gen', self.generations), pf=self.pf, verbose=False, save_history=True)
-            
+            # print(name)
+            kwargs = dict(termination=('n_gen', self.generations),
+                          verbose=False, save_history=False)
+            res = minimize(self.problem, algorithm, seed=self.seed, **kwargs)
+
             # debug
             # res_dict = pd.DataFrame(res.F)
             # st.dataframe(res_dict)
 
-            res_F = np.array(res.F)
+            if res.X is None:
+                st.warning(f"{name}: Can't find feasible solutions that satisfy the constraints. Please relax the constraints.")
+                continue
+            
+            X_opt = np.atleast_2d(res.X)
+            sequences = [decode_sequence(x) for x in X_opt]
 
-            res_dict = {}
-            for i, obj_name in enumerate(self.optimization_directions.keys()):
-                res_dict[obj_name] = res_F[:, i]
-            res_dict = pd.DataFrame(res_dict)
+            rows = []
+            for s in sequences:
+                props = compute_properties(s)
+                props['Sequence'] = s
+                props['model'] = name
+                rows.append(props)
 
-            pareto_dict = {
-                'Sequence': [entry['Sequence'] for entry in self.problem.pareto_sequences],
-                'Gravy': [entry['Gravy'] for entry in self.problem.pareto_sequences],
-                'Instability Index': [entry['Instability Index'] for entry in self.problem.pareto_sequences],
-                'Aliphatic Index': [entry['Aliphatic Index'] for entry in self.problem.pareto_sequences],
-                'Boman Index': [entry['Boman Index'] for entry in self.problem.pareto_sequences],
-                'Molecular Weight': [entry['Molecular Weight'] for entry in self.problem.pareto_sequences],
-                'Sequence Length': [entry['Sequence Length'] for entry in self.problem.pareto_sequences],
-                'Isoelectric point': [entry['Isoelectric point'] for entry in self.problem.pareto_sequences],
-                'Net charge': [entry['Net charge'] for entry in self.problem.pareto_sequences],
-                'Charge at pH': [entry['Charge at pH'] for entry in self.problem.pareto_sequences],
-                'Aromaticity': [entry['Aromaticity'] for entry in self.problem.pareto_sequences],
-                'Secondary structure fraction Helix': [entry['Secondary structure fraction Helix'] for entry in self.problem.pareto_sequences],
-                'Secondary structure fraction Turn': [entry['Secondary structure fraction Turn'] for entry in self.problem.pareto_sequences],
-                'Secondary structure fraction Sheet': [entry['Secondary structure fraction Sheet'] for entry in self.problem.pareto_sequences],
-                'Amphipathicity': [entry['Amphipathicity'] for entry in self.problem.pareto_sequences],
-                'Correlation': [entry['Correlation'] for entry in self.problem.pareto_sequences],
-                'Covariance': [entry['Covariance'] for entry in self.problem.pareto_sequences],
-                'Hydrophobic Moenet': [entry['Hydrophobic Moenet'] for entry in self.problem.pareto_sequences],
-                'Mass': [entry['Mass'] for entry in self.problem.pareto_sequences],
-                'Mz': [entry['Mz'] for entry in self.problem.pareto_sequences],
-                'model': [name for entry in self.problem.pareto_sequences]
-            }
+            pareto_df = pd.DataFrame(rows)
+            pareto_df = pareto_df.drop_duplicates(subset='Sequence').reset_index(drop=True)
 
-            pareto_df = pd.DataFrame(pareto_dict)
-            merged_df = pd.concat([res_dict, pareto_df], axis=1)
-            merged_df = merged_df.loc[:,~merged_df.columns.duplicated()].dropna()
-            if "optimization_results" not in st.session_state:
-                st.session_state.optimization_results = {}
+            res_dict = pareto_df[list(self.optimization_directions.keys())].copy()
+
+            merged_df = pareto_df.copy()
 
             st.session_state.optimization_results[name] = {
                 "res_dict": res_dict,
                 "pareto_df": pareto_df,
-                "merged_df": merged_df.copy()
+                "merged_df": merged_df,
+                "directions": dict(self.optimization_directions),
             }
         return list(st.session_state.optimization_results.keys())
