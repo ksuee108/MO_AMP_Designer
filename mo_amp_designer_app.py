@@ -15,30 +15,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 scaler = joblib.load("model/scaler.pkl")
 label_encoder = joblib.load("model/label_encoder.pkl")
 feature_columns = joblib.load("model/feature_columns.pkl")
-def predict(model,X,bacteria_ids,model_name):
-
-    model.eval()
-
-    with torch.no_grad():
-
-        X = torch.tensor(X,dtype=torch.float32)
-        bacteria_ids = torch.tensor(bacteria_ids,dtype=torch.long)
-
-        if model_name in ["AE", "DAE"]:
-            pred, _ = model(X, bacteria_ids)
-
-        elif model_name == "VAE":
-            pred, _, _, _ = model(X, bacteria_ids)
-
-        elif model_name == "Contrastive":
-            pred, _, _ = model(X, bacteria_ids)
-
-        else:
-            pred = model(X, bacteria_ids)
-
-    return pred.cpu().numpy().flatten()
-
-
 user_home = os.path.expanduser("~")
 
 st.set_page_config(page_title="MO-AMP designer", layout="wide")
@@ -434,7 +410,7 @@ with main_tab1:
             merged_out = entry["merged_df"]
 
             fasta_str = "".join(
-                f">{algo}_{i+1}\n{row['Sequence']}\n"
+                f">{row['Sequence']}\n{row['Sequence']}\n"
                 for _, row in merged_out.iterrows()
             )
             cols = st.columns(3)
@@ -538,44 +514,12 @@ with main_tab2:
     
             ## 2. Computational Framework
     
-            The workflow consists of three major components:
-    
-            ### (1) Sequence Representation
             Input peptide sequences are transformed into high-dimensional descriptors, including:
             - physicochemical properties (e.g., GRAVY, charge, hydrophobicity)
             - structural propensity features
             - peptide-derived descriptors
     
             These features form the input space for predictive modeling.
-    
-            ---
-    
-            ### (2) Machine Learning Models
-            Multiple deep learning architectures are implemented for MIC prediction:
-    
-            - Convolutional Neural Network (CNN)
-            - AutoEncoder-based regressor (AE)
-            - Denoising AutoEncoder (DAE)
-            - Variational AutoEncoder (VAE)
-            - Contrastive representation model
-    
-            Each model is trained to perform regression on log-transformed MIC values conditioned on bacterial type.
-    
-            ---
-    
-            ### (3) Multi-Bacteria Prediction Strategy
-            The system supports multi-organism inference across clinically relevant bacteria:
-    
-            - *Escherichia coli*
-            - *Staphylococcus aureus*
-            - *Pseudomonas aeruginosa*
-            - *Acinetobacter baumannii*
-    
-            For each peptide, bacteria-specific MIC values are predicted and aggregated into:
-            - best-target selection (minimum MIC)
-            - broad-spectrum activity score
-            - ranked antibacterial spectrum profile
-    
             ---
     
             ## 3. Output Interpretation

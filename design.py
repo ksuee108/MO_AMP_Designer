@@ -4,6 +4,7 @@ import numpy as np
 
 from pymoo.optimize import minimize
 from pymoo.core.problem import Problem
+from pymoo.core.sampling import Sampling
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.algorithms.moo.rnsga2 import RNSGA2
 from pymoo.algorithms.moo.nsga3 import NSGA3
@@ -14,9 +15,6 @@ from pymoo.algorithms.moo.age import AGEMOEA
 from pymoo.algorithms.moo.age2 import AGEMOEA2
 
 from sklearn.preprocessing import MinMaxScaler
-from pymoo.visualization.pcp import PCP
-from pymoo.visualization.petal import Petal
-from pymoo.visualization.radviz import Radviz
 from pymoo.visualization.scatter import Scatter
 from pymoo.operators.sampling.rnd import IntegerRandomSampling
 from pymoo.operators.crossover.sbx import SBX
@@ -26,26 +24,84 @@ from pymoo.operators.repair.rounding import RoundingRepair
 from BioAnalysis import Bio_analysis
 import matplotlib.pyplot as plt
 import streamlit as st
-from mpl_toolkits.mplot3d import Axes3D
 from math import comb
+from functools import lru_cache
 
 AA_STR = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
           'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+AA_INDEX = {a: i for i, a in enumerate(AA_STR)}
 
 
-def int_ops():
+# =========================================================
+# Initial population seeded from the dataset
+# =========================================================
+
+def clean_seed_sequences(seqs):
+    """Keep unique peptides that contain only the 20 standard amino acids."""
+    if seqs is None:
+        return []
+    out = []
+    for s in seqs:
+        if isinstance(s, str):
+            s = s.strip().upper()
+            if s and set(s) <= set(AA_STR):
+                out.append(s)
+    return list(dict.fromkeys(out))
+
+
+def encode_to_length(seq: str, length: int):
+    """Fit one dataset peptide to the design length.
+
+    longer  -> random contiguous window of `length` residues
+    shorter -> the peptide followed by random residues
+    """
+    if len(seq) > length:
+        start = np.random.randint(0, len(seq) - length + 1)
+        seq = seq[start:start + length]
+    x = [AA_INDEX[a] for a in seq]
+    if len(x) < length:
+        x += list(np.random.randint(0, len(AA_STR), size=length - len(x)))
+    return x
+
+
+class DatasetSampling(Sampling):
+    """Initial population = `fraction` dataset peptides + random peptides (rest).
+
+    Uses numpy's global RNG, which pymoo seeds from minimize(seed=...), so runs are reproducible.
+    """
+
+    def __init__(self, seed_sequences, fraction=0.5):
+        super().__init__()
+        self.seed_sequences = clean_seed_sequences(seed_sequences)
+        self.fraction = float(np.clip(fraction, 0.0, 1.0))
+
+    def _do(self, problem, n_samples, **kwargs):
+        X = np.random.randint(0, len(AA_STR), size=(n_samples, problem.n_var))
+        k = int(round(self.fraction * n_samples)) if self.seed_sequences else 0
+        if k > 0:
+            pick = np.random.choice(len(self.seed_sequences), size=k,
+                                    replace=len(self.seed_sequences) < k)
+            for row, idx in enumerate(pick):
+                X[row] = encode_to_length(self.seed_sequences[idx], problem.n_var)
+        return X
+
+
+def int_ops(sampling=None):
     return dict(
-        sampling=IntegerRandomSampling(),
+        sampling=sampling if sampling is not None else IntegerRandomSampling(),
         crossover=SBX(prob=1.0, eta=3.0, vtype=float, repair=RoundingRepair()),
         mutation=PM(eta=3.0, vtype=float, repair=RoundingRepair()),
         eliminate_duplicates=True,
     )
 
+
 def auto_partitions(n_obj: int, max_points: int) -> int:
+    # largest number of Das-Dennis partitions whose reference-point count does not exceed max_points
     p = 1
     while comb(p + n_obj, n_obj - 1) <= max_points:
         p += 1
     return p
+
 
 def is_maximize(name: str, mode: str) -> bool:
     """Gravy: hydrophobicity = Maximize GRAVY；Other: Maximize = Maximize"""
@@ -55,16 +111,17 @@ def is_maximize(name: str, mode: str) -> bool:
 
 
 def decode_sequence(x) -> str:
-    return ''.join(AA_STR[int(round(v))] for v in x)
+    return ''.join(AA_STR[min(max(int(round(v)), 0), len(AA_STR) - 1)] for v in x)
 
-from functools import lru_cache
 
 @lru_cache(maxsize=50000)
 def _props_cached(peptide: str) -> tuple:
     return tuple(_compute_properties_raw(peptide).items())
 
+
 def compute_properties(peptide: str) -> dict:
     return dict(_props_cached(peptide))
+
 
 def _compute_properties_raw(peptide: str) -> dict:
     """compute all properties at once (secondary structure is computed only once)"""
@@ -92,6 +149,7 @@ def _compute_properties_raw(peptide: str) -> dict:
         'Sequence Length': ba.get_sequenceLength(),
     }
 
+
 def build_ref_points(opt, directions, targets: dict) -> np.ndarray:
     """targets: {'Net charge': 5, 'Instability Index': 20}, return shape (1, n_obj)"""
     pt = []
@@ -99,6 +157,7 @@ def build_ref_points(opt, directions, targets: dict) -> np.ndarray:
         v = float(targets[name])
         pt.append(-v if is_maximize(name, directions[name]) else v)
     return np.array([pt])
+
 
 class MyProblemWithData(Problem):
     def __init__(self, sequences, optimization_directions=None, sequence_length=12,
@@ -181,6 +240,7 @@ def amino_acid_percentage(algo: str, df: pd.DataFrame):
     st.pyplot(fig)
     plt.close(fig)
 
+
 def pick_best_index(df, optimization_directions):
     """挑出離理想點最近的解（統一成最小化後正規化）"""
     objectives = list(optimization_directions.keys())
@@ -224,6 +284,7 @@ def plot_scatter_matrix(algo, df, optimization_directions):
     fig.tight_layout()
     st.pyplot(fig)
     plt.close(fig)
+
 
 def plot_pareto_fronts_many(algo: str, df: pd.DataFrame, optimization_directions: dict):
     """
@@ -270,6 +331,7 @@ def plot_pareto_fronts_many(algo: str, df: pd.DataFrame, optimization_directions
     st.markdown(f"### 🔹 Scatter Matrix Plot ({algo})")
     plot_scatter_matrix(algo, plot_df, optimization_directions)
 
+
 def plot_pareto_fronts_multi(algo: str, df: pd.DataFrame, optimization_directions: dict):
     """
     Visualize Pareto fronts for 2D / 3D objectives.
@@ -298,11 +360,12 @@ def plot_pareto_fronts_multi(algo: str, df: pd.DataFrame, optimization_direction
     if len(objectives) == 3:
         plot_scatter_matrix(algo, plot_df, optimization_directions)
 
+
 # ----------------------------
 class algorithms_setup():
     def __init__(self, df, algorithms_list, pop_size, generations,
                  optimization_directions, length, opt, constraint_dict_list,
-                 ref_targets=None, seed=42):
+                 ref_targets=None, seed=42, init_fraction=0.5):
         self.sequences = df['Sequence'] if df is not None and 'Sequence' in df.columns else None
         self.algorithms_list = list(algorithms_list)
         self.pop_size = pop_size
@@ -313,6 +376,7 @@ class algorithms_setup():
         self.constraint_dict_list = constraint_dict_list
         self.ref_targets = ref_targets
         self.seed = seed
+        self.init_fraction = init_fraction
 
     def _new_problem(self):
         return MyProblemWithData(
@@ -327,6 +391,18 @@ class algorithms_setup():
         st.write("Maximized objectives will be multiplied by -1 to convert them into "
                  "minimization problems for optimization, and the results will be "
                  "restored when displayed.")
+
+        # Initial population: a fraction of it comes from the selected / uploaded dataset
+        seed_seqs = clean_seed_sequences(self.sequences)
+        if seed_seqs and self.init_fraction > 0:
+            sampling = DatasetSampling(seed_seqs, self.init_fraction)
+            n_seeded = int(round(self.init_fraction * self.pop_size))
+            st.info(f"Initial population: ~{n_seeded} of {self.pop_size} peptides are drawn from "
+                    f"{len(seed_seqs)} dataset sequences (fitted to length {self.length}); "
+                    f"the rest are random.")
+        else:
+            sampling = IntegerRandomSampling()
+            st.info("Initial population: fully random (no dataset sequences used).")
 
         # Das-Dennis reference directions (NSGA-III / U-NSGA-III)
         n_partitions = auto_partitions(len(self.opt), self.pop_size)
@@ -349,46 +425,38 @@ class algorithms_setup():
 
         # Build lazily so that only the selected algorithms are instantiated
         factories = {
-            'NSGA-II':     lambda: NSGA2(pop_size=self.pop_size, **int_ops()),
-            'NSGA-III':    lambda: NSGA3(ref_dirs=ref_dirs, pop_size=self.pop_size, **int_ops()),
-            'U-NSGA-III':  lambda: UNSGA3(ref_dirs=ref_dirs, pop_size=self.pop_size, **int_ops()),
-            'R-NSGA-II':   lambda: RNSGA2(ref_points=ref_pts, pop_size=self.pop_size, **int_ops()),
+            'NSGA-II':     lambda: NSGA2(pop_size=self.pop_size, **int_ops(sampling)),
+            'NSGA-III':    lambda: NSGA3(ref_dirs=ref_dirs, pop_size=self.pop_size, **int_ops(sampling)),
+            'U-NSGA-III':  lambda: UNSGA3(ref_dirs=ref_dirs, pop_size=self.pop_size, **int_ops(sampling)),
+            'R-NSGA-II':   lambda: RNSGA2(ref_points=ref_pts, pop_size=self.pop_size, **int_ops(sampling)),
             'R-NSGA-III':  lambda: RNSGA3(ref_points=ref_pts,
                                           pop_per_ref_point=max(1, self.pop_size // len(ref_pts)),
-                                          **int_ops()),
-            'AGE-MOEA':    lambda: AGEMOEA(pop_size=self.pop_size, **int_ops()),
-            'AGE-MOEA-II': lambda: AGEMOEA2(pop_size=self.pop_size, **int_ops()),
+                                          **int_ops(sampling)),
+            'AGE-MOEA':    lambda: AGEMOEA(pop_size=self.pop_size, **int_ops(sampling)),
+            'AGE-MOEA-II': lambda: AGEMOEA2(pop_size=self.pop_size, **int_ops(sampling)),
         }
         self.algorithms = [
             (make(), name) for name, make in factories.items()
             if name in self.algorithms_list
         ]
-        #print(self.algorithms)
-
 
     def run(self):
         st.info("Starting optimization...")
         st.session_state.optimization_results = {}
-        
-        # Initialize session state for results
-        if "optimization_results" not in st.session_state:
-            st.session_state.optimization_results = {}
-        
+
         for algorithm, name in self.algorithms:
-            # print(name)
-            problem = self._new_problem()
+            problem = self._new_problem()          # fresh evaluation log for every algorithm
             kwargs = dict(termination=('n_gen', self.generations),
                           verbose=False, save_history=False)
             res = minimize(problem, algorithm, seed=self.seed, **kwargs)
-            all_df = pd.DataFrame([{'Sequence': s, **p, 'model': name} for s, p in problem.evaluated.items()])
-            # debug
-            # res_dict = pd.DataFrame(res.F)
-            # st.dataframe(res_dict)
+            all_df = pd.DataFrame([{'Sequence': s, **p, 'model': name}
+                                   for s, p in problem.evaluated.items()])
 
             if res.X is None:
-                st.warning(f"{name}: Can't find feasible solutions that satisfy the constraints. Please relax the constraints.")
+                st.warning(f"{name}: Can't find feasible solutions that satisfy the constraints. "
+                           f"Please relax the constraints.")
                 continue
-            
+
             X_opt = np.atleast_2d(res.X)
             sequences = [decode_sequence(x) for x in X_opt]
 
@@ -411,8 +479,8 @@ class algorithms_setup():
 
             st.session_state.optimization_results[name] = {
                 "res_dict": res_dict,
-                "pareto_df": all_df,
-                "merged_df": merged_df,
+                "pareto_df": all_df,        # all distinct peptides evaluated in this run
+                "merged_df": merged_df,     # final Pareto-optimal solutions
                 "directions": dict(self.optimization_directions),
             }
         return list(st.session_state.optimization_results.keys())
