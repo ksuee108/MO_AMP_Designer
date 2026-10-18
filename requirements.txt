@@ -10,3 +10,5 @@ numba
 biopython
 peptides
 torch
+joblib
+functools
