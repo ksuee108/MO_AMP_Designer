@@ -520,18 +520,7 @@ with main_tab2:
             
             ---
     
-            ## 3. Output Interpretation
-    
-            The system provides:
-            - predicted MIC values per bacterium-model pair
-            - ensemble-averaged MIC estimation
-            - inferred optimal target bacteria
-            - spectrum activity index (based on MIC thresholding)
-            - ranking of antibacterial effectiveness
-    
-            ---
-    
-            ## 4. Intended Applications
+            ## 3. Intended Applications
     
             This framework is applicable to:
             - antimicrobial peptide discovery
@@ -541,7 +530,7 @@ with main_tab2:
     
             ---
     
-            ## 5. Data Source
+            ## 4. Data Source
     
             Model training is based on curated peptide-bacteria interaction datasets derived from DBAASP and related antimicrobial peptide repositories.
     
@@ -549,7 +538,7 @@ with main_tab2:
     
             ---
     
-            ## 6. Citation
+            ## 5. Citation
     
             If you use this system, please cite:
     
