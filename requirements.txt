@@ -11,4 +11,3 @@ biopython
 peptides
 torch
 joblib
-functools
