@@ -24,15 +24,13 @@ main_tab1, main_tab2, main_tab3, main_tab4, main_tab5 = st.tabs(["Home", "About 
 
 footer = """
 <style>
-
-main > div {
-    padding-bottom: 0px !important;
-    padding-top: 0px !important;
+/* 為固定在底部的 footer 預留空間,避免擋住內容與按鈕 */
+[data-testid="stMainBlockContainer"],
+.block-container {
+    padding-bottom: 90px !important;
 }
-
-body {
-    margin: 0;
-    padding-bottom: 60px; 
+[data-testid="stSidebarUserContent"] {
+    padding-bottom: 90px !important;
 }
 
 .footer-text {
@@ -46,9 +44,8 @@ body {
     padding: 10px 0;
     font-size: 14px;
     border-top: 1px solid #ccc;
-    z-index: 1000;
+    z-index: 100;   /* 降低層級,避免蓋住下拉選單與對話框 */
 }
-
 </style>
 
 <div class="footer-text">
