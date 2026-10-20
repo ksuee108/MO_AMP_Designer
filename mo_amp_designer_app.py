@@ -515,8 +515,9 @@ with main_tab2:
             - physicochemical properties (e.g., GRAVY, charge, hydrophobicity)
             - structural propensity features
             - peptide-derived descriptors
-    
+            
             These features form the input space for predictive modeling.
+            
             ---
     
             ## 3. Output Interpretation
