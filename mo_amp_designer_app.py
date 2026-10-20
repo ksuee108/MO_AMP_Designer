@@ -20,7 +20,7 @@ user_home = os.path.expanduser("~")
 st.set_page_config(page_title="MO-AMP designer", layout="wide")
 st.title("🧬 MO-AMP designer")
 st.text("This app allows users to explore and design antimicrobial peptides by multi-objective optimization.")
-main_tab1, main_tab2, main_tab3, main_tab4, main_tab5 = st.tabs(["Home", "About this App", "Method Overview", "How to Design", "Related Databases and Prediction Websites"])
+main_tab1, main_tab2, main_tab4, main_tab5 = st.tabs(["Home", "About this App", "How to Design", "Related Databases and Prediction Websites"])
 
 footer = """
 <style>
@@ -558,116 +558,7 @@ with main_tab2:
             https://doi.org/10.3390/ijms252413688
             """)
     
-with main_tab3:
-    st.header("Prediction Methodology")
-    
-    st.markdown("""
-        ## Overview
-        This module describes the computational pipeline used for antimicrobial peptide (AMP) MIC prediction.
-        The framework integrates sequence-based physicochemical feature extraction with multi-model deep learning ensembles.
-    
-        ---
-    
-        ## 1. Input Representation
-        Peptide sequences are provided in FASTA format and converted into structured numerical representations.
-    
-        Each sequence is transformed into:
-    
-        - Physicochemical descriptors (e.g., hydrophobicity, charge, aromaticity)
-        - Structural indices (e.g., instability index, aliphatic index)
-        - Peptide embedding descriptors (sequence-derived features)
-    
-        ---
-    
-        ## 2. Feature Engineering
-        For each peptide sequence $S$, a feature vector $X$ is constructed:
-    
-        $$
-        X = [f_1(S), f_2(S), ..., f_n(S)]
-        $$
-    
-        where features include:
-    
-        - Hydrophobicity (GRAVY)
-        - Isoelectric point
-        - Net charge
-        - Molecular weight
-        - Secondary structure fractions
-        - Boman index
-        - Autocorrelation & covariance descriptors
-        - Amino acid composition-based descriptors
-        - Charge at pH
-    
-        All features are normalized using **RobustScaler** to reduce sensitivity to outliers.
-    
-        ---
-    
-        ## 3. Bacteria-aware Encoding
-        The model incorporates bacterial conditioning via label encoding:
-    
-        $$
-        y = f(X, b)
-        $$
-    
-        where:
-        - $X$: peptide features
-        - $b$: bacterial species index (0–3)
-    
-        This allows species-specific MIC prediction.
-    
-        ---
-    
-        ## 4. Model Architecture
-        An ensemble of deep learning models is used:
-    
-        - CNN-based regression model
-        - AutoEncoder regressor (AE)
-        - Denoising AutoEncoder (DAE)
-        - Variational AutoEncoder (VAE)
-        - Contrastive representation model
-    
-        Each model outputs:
-    
-        $$
-        \hat{y}_{log2MIC}
-        $$
-    
-        which is converted to MIC scale:
-    
-        $$
-        MIC = 2^{\hat{y}} - 1
-        $$
-    
-        ---
-    
-        ## 5. Ensemble Strategy
-        For each bacteria species:
-    
-        $$
-        MIC_{ensemble} = \frac{1}{M} \sum_{i=1}^{M} MIC_i
-        $$
-    
-        where $M$ is the number of models.
-    
-        ---
-    
-        ## 6. Decision Logic
-        The system provides:
-    
-        - Best target bacteria (minimum MIC)
-        - Broad-spectrum score (MIC < threshold)
-        - Ranked antibacterial susceptibility profile
-    
-        ---
-    
-        ## 7. Output Interpretation
-        Predictions represent **in silico estimated MIC values** and should be interpreted as:
-    
-        > computational guidance for peptide prioritization, not experimental validation.
-    
-        ---
-        """)
-    
+
 with main_tab4:
     st.header("How to Design Antimicrobial Peptides using this App")
     st.markdown("""
