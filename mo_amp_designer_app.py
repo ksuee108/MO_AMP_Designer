@@ -762,6 +762,7 @@ with main_tab4:
     If you encounter any issues or have questions, please upload your issues or figure to the 
                 https://github.com/ksuee108/amp_desige/issues, and we will get back to you as soon as possible.
     """)
+
 with main_tab5:
     st.header("Related Databases and Prediction Websites")
     AMP_databases = {
