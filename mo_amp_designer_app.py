@@ -503,6 +503,7 @@ with main_tab2:
             - It allows users to define optimization objectives, constraints, and reference points for targeted AMP discovery
 
             to support computational peptide screening against clinically relevant pathogens.
+            
             ---
     
             ## 2. Computational Framework
