@@ -598,7 +598,13 @@ with main_tab4:
                     """)
     st.image(os.path.join("figure", "Objectives to optimize.png"))
     st.markdown("""
-    ### 5. **Add Optional Constraints**
+        ### 5. **Setting Reference Point**
+        For R-NSGA-II/III algorithms, users may define a reference point in the objective space.  
+        The reference point guides the search toward user-preferred regions of the Pareto front.
+                    """)
+    st.image(os.path.join("figure", "Reference Point.png"))
+    st.markdown("""
+    ### 6. **Add Optional Constraints**
     Users may define upper/lower bounds to restrict the peptide search space.  
     For example:
     - Instability Index ≥ 40  
@@ -609,7 +615,7 @@ with main_tab4:
                 """)
     st.image(os.path.join("figure", "constraints.png"))
     st.markdown("""
-    ### 6. **Run Optimization**
+    ### 7. **Run Optimization**
     Press **“Run Optimization”** to execute the selected algorithms.  
     The app will:
     - Perform evolutionary optimization  
@@ -617,26 +623,32 @@ with main_tab4:
     - Identify non-dominated peptide solutions  
     - Cache results for further analysis  
 
-    ### 7. **View and Download Results**
+    ### 8. **View and Download Results**
     Results include:
     - Objective value tables
     - Full Pareto-optimal peptide lists
     - Merged physicochemical property profiles
     - FASTA files for external analysis  
     - CSV exports for downstream modeling
-
-    ### 8. **Visualize Optimization Outcomes**
-    You may generate:
-    - Multi-dimensional Pareto front plots  
-    - Amino acid composition heatmaps  
-    - Sequence-level physicochemical distribution analyses  
-
-    These visualizations provide insight into peptide behavior, trade-offs among descriptors, and optimization dynamics.
-                
                 """)
     st.image(os.path.join("figure", "run.png"))
     st.image(os.path.join("figure", "result.png"))
-    st.image(os.path.join("figure", "plot.png"))
+
+    st.markdown("""
+    ### 9. **Visualize Optimization Outcomes**
+    You may generate:
+    - Amino acid composition of Pareto-optimal sequences
+    - Scatter matrix plots for descriptor trade-offs
+    - Pareto front distribution plots
+    - Parallel-coordinate plots (When optimizing more than 3 objectives)
+
+    These visualizations provide insight into peptide behavior, trade-offs among descriptors, and optimization dynamics.
+                """)
+    
+    st.image(os.path.join("figure", "Amino acid composition.png"))
+    st.image(os.path.join("figure", "Scatter matrix.png"))
+    st.image(os.path.join("figure", "Pareto front.png"))
+    st.image(os.path.join("figure", "Parallel-coordinate.png"))
     st.markdown("""
     ### Summary
     This app provides a structured, multi-objective approach to AMP design by integrating algorithmic search, physicochemical evaluation, and biological constraint modeling. It aims to accelerate the rational development of antimicrobial peptides with optimized properties.
