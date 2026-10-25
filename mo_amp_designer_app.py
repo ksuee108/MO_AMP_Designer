@@ -497,16 +497,12 @@ with main_tab2:
     
     st.markdown("""
             ## 1. System Purpose
-            This platform is developed for **de novo antimicrobial peptide (AMP) design and activity prediction** using machine learning models and sequence-based physicochemical representations.
-    
-            The system integrates:
-            - sequence feature engineering
-            - supervised MIC regression models
-            - multi-bacteria activity profiling
-            - ensemble-based prediction
-    
+            This platform is developed for **de novo antimicrobial peptide (AMP) design** using machine learning models and sequence-based physicochemical representations.
+
+            - The system integrates multi-objective optimization algorithms to explore the peptide sequence space.
+            - It allows users to define optimization objectives, constraints, and reference points for targeted AMP discovery
+
             to support computational peptide screening against clinically relevant pathogens.
-    
             ---
     
             ## 2. Computational Framework
