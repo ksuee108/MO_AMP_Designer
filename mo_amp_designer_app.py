@@ -602,7 +602,7 @@ with main_tab4:
         For R-NSGA-II/III algorithms, users may define a reference point in the objective space.  
         The reference point guides the search toward user-preferred regions of the Pareto front.
                     """)
-    st.image(os.path.join("figure", "Reference Point.png"))
+    st.image(os.path.join("figure", "reference point.png"))
     st.markdown("""
     ### 6. **Add Optional Constraints**
     Users may define upper/lower bounds to restrict the peptide search space.  
