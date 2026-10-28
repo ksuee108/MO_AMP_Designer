@@ -189,10 +189,11 @@ with main_tab1:
         can_proceed = False
     else:
         optimization_directions = {}
-        for i in opt:
-            st.caption(
+        st.caption(
                 "For each objective, select whether to minimize or maximize the property. (Gravy is treated as hydrophobicity or hydrophilicity depending on user preference.)"
                         )
+        for i in opt:
+            
             if i != "Gravy" :
                 optimization_directions[i] = st.selectbox(
                     f"Select minima or maxima for {i}",
