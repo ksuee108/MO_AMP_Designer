@@ -381,7 +381,8 @@ with main_tab1:
                         f"directions. With {len(opt)} objectives, a population size of {pop_size} "
                         f"is not valid, so it has been automatically adjusted to {effective_pop}."
                     )
-            with st.spinner("Running optimization... This may take a few minutes."):
+            with st.spinner("Running optimization... This may take a few minutes.\n"
+                            "**Please wait and don't edit all the settings otherwise recalculation will be needed**"):
                 try:
                     # algorithm setup
                     setup = algorithms_setup(
