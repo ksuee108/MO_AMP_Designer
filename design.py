@@ -242,7 +242,6 @@ def amino_acid_percentage(algo: str, df: pd.DataFrame):
 
 
 def pick_best_index(df, optimization_directions):
-    """挑出離理想點最近的解（統一成最小化後正規化）"""
     objectives = list(optimization_directions.keys())
     X = df[objectives].values.astype(float)
     for k, name in enumerate(objectives):

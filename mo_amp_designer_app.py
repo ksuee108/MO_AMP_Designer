@@ -10,6 +10,7 @@ import torch
 import peptides
 import numpy as np
 import joblib
+from math import comb
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 scaler = joblib.load("model/scaler.pkl")
@@ -58,6 +59,22 @@ VALID_AA = set("ACDEFGHIKLMNPQRSTVWY")
 
 def is_valid_peptide(seq: str) -> bool:
     return len(seq) > 0 and set(seq.upper()) <= VALID_AA
+
+def valid_das_dennis_sizes(n_obj: int, max_size: int = 400):
+    """回傳所有合法的 Das-Dennis 點數 C(n_obj + p - 1, p)"""
+    sizes, p = [], 1
+    while True:
+        n = comb(n_obj + p - 1, p)
+        if n > max_size:
+            break
+        sizes.append(n)
+        p += 1
+    return sizes
+
+def snap_pop_size(pop_size: int, n_obj: int):
+    """取最接近的合法點數(相同距離時取較大者)"""
+    sizes = valid_das_dennis_sizes(n_obj)
+    return min(sizes, key=lambda s: (abs(s - pop_size), -s))
 
 with main_tab1:
     # ----------------------------
@@ -187,6 +204,12 @@ with main_tab1:
     if len(algorithms) < 1:
         st.warning("Please select at least one algorithm to optimize.")
         can_proceed = False
+
+    if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")) and len(opt) >= 2:
+        st.caption(
+            f"Recommended population sizes for the NSGA-III family "
+            f"with {len(opt)} objectives: {valid_das_dennis_sizes(len(opt))}"
+        )
     else:
         optimization_directions = {}
         st.caption(
@@ -349,6 +372,15 @@ with main_tab1:
         ready = data_ready and len(opt) >= 2
         
         if st.button("🚀 Run Optimization", disabled=not ready):
+            effective_pop = pop_size
+            if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")):
+                effective_pop = snap_pop_size(pop_size, len(opt))
+                if effective_pop != pop_size:
+                    st.info(
+                        f"The NSGA-III family requires a fixed number of Das-Dennis reference "
+                        f"directions. With {len(opt)} objectives, a population size of {pop_size} "
+                        f"is not valid, so it has been automatically adjusted to {effective_pop}."
+                    )
             with st.spinner("Running optimization... This may take a few minutes."):
                 try:
                     # algorithm setup
@@ -369,6 +401,11 @@ with main_tab1:
                     st.success("Optimization completed successfully ✅")
 
                 except Exception as e:
+                    st.caption(
+                        "Enter the ideal value you want for each objective, in the original "
+                        "units (e.g. Net charge = 5, not -5). R-NSGA-II/III will concentrate "
+                        "the search around this point."
+                                )
                     st.error(f"Error during optimization: {e}")
 
         # ----------------------------
