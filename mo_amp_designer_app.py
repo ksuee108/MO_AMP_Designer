@@ -204,13 +204,14 @@ with main_tab1:
     if len(algorithms) < 1:
         st.warning("Please select at least one algorithm to optimize.")
         can_proceed = False
+    if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")) and pop_size not in valid_das_dennis_sizes(len(opt)):
+        
+        st.info(
+            f"Recommended population sizes for the R-NSGA-II, R-NSGA-III algorithms "
+            f"with {len(opt)} objectives: **{valid_das_dennis_sizes(len(opt))}**"
+        )
     else:
-        if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")) and len(opt) > 2 and pop_size not in valid_das_dennis_sizes(len(opt)):
-            
-            st.info(
-                f"Recommended population sizes for the R-NSGA-II, R-NSGA-III algorithms "
-                f"with {len(opt)} objectives: **{valid_das_dennis_sizes(len(opt))}**"
-            )
+        
         optimization_directions = {}
         st.caption(
             "For each objective, select whether to minimize or maximize the property. (Gravy is treated as hydrophobicity or hydrophilicity depending on user preference.)"
