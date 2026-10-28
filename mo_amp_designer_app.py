@@ -190,6 +190,9 @@ with main_tab1:
     else:
         optimization_directions = {}
         for i in opt:
+            st.caption(
+                "For each objective, select whether to minimize or maximize the property. (Gravy is treated as hydrophobicity or hydrophilicity depending on user preference.)"
+                        )
             if i != "Gravy" :
                 optimization_directions[i] = st.selectbox(
                     f"Select minima or maxima for {i}",
@@ -232,6 +235,10 @@ with main_tab1:
         st.markdown("---")
         st.header("Constraints")
 
+        st.caption(
+            "Constraints allow you to restrict the search space for peptide properties. For example, you can set a maximum instability index or a minimum net charge. Enter the desired limit for each property below."
+        )
+        
         options=[
                 'Gravy', 'Instability Index', 'Aliphatic Index', 'Isoelectric point',
                 'Net charge', 'Molecular Weight', 'Charge at pH', 'Aromaticity',
