@@ -206,14 +206,15 @@ with main_tab1:
         can_proceed = False
     else:
         if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")) and len(opt) >= 2:
-                st.caption(
-                    f"Recommended population sizes for the R-NSGA-II, R-NSGA-III algorithms "
-                    f"with {len(opt)} objectives: {valid_das_dennis_sizes(len(opt))}"
-                )
+            
+            st.info(
+                f"Recommended population sizes for the R-NSGA-II, R-NSGA-III algorithms "
+                f"with {len(opt)} objectives: {valid_das_dennis_sizes(len(opt))}"
+            )
         optimization_directions = {}
         st.caption(
-                "For each objective, select whether to minimize or maximize the property. (Gravy is treated as hydrophobicity or hydrophilicity depending on user preference.)"
-                        )
+            "For each objective, select whether to minimize or maximize the property. (Gravy is treated as hydrophobicity or hydrophilicity depending on user preference.)"
+            )
         for i in opt:
             
             if i != "Gravy" :
