@@ -205,7 +205,7 @@ with main_tab1:
         st.warning("Please select at least one algorithm to optimize.")
         can_proceed = False
     else:
-        if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")) and len(opt) >= 2:
+        if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")) and len(opt) > 2:
             
             st.info(
                 f"Recommended population sizes for the R-NSGA-II, R-NSGA-III algorithms "
