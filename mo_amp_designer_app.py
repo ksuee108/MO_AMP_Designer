@@ -61,7 +61,7 @@ def is_valid_peptide(seq: str) -> bool:
     return len(seq) > 0 and set(seq.upper()) <= VALID_AA
 
 def valid_das_dennis_sizes(n_obj: int, max_size: int = 400):
-    """回傳所有合法的 Das-Dennis 點數 C(n_obj + p - 1, p)"""
+    """Returns all valid Das-Dennis point counts C(n_obj + p - 1, p)"""
     sizes, p = [], 1
     while True:
         n = comb(n_obj + p - 1, p)
@@ -72,7 +72,7 @@ def valid_das_dennis_sizes(n_obj: int, max_size: int = 400):
     return sizes
 
 def snap_pop_size(pop_size: int, n_obj: int):
-    """取最接近的合法點數(相同距離時取較大者)"""
+    """approximate the closest valid population size for Reference point family (Das-Dennis reference directions)"""
     sizes = valid_das_dennis_sizes(n_obj)
     return min(sizes, key=lambda s: (abs(s - pop_size), -s))
 
@@ -207,7 +207,7 @@ with main_tab1:
 
     if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")) and len(opt) >= 2:
         st.caption(
-            f"Recommended population sizes for the NSGA-III family "
+            f"Recommended population sizes for the R-NSGA-II, R-NSGA-III algorithms "
             f"with {len(opt)} objectives: {valid_das_dennis_sizes(len(opt))}"
         )
     else:
