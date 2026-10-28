@@ -209,7 +209,7 @@ with main_tab1:
             
             st.info(
                 f"Recommended population sizes for the R-NSGA-II, R-NSGA-III algorithms "
-                f"with {len(opt)} objectives: {valid_das_dennis_sizes(len(opt))}"
+                f"with {len(opt)} objectives: **{valid_das_dennis_sizes(len(opt))}**"
             )
         optimization_directions = {}
         st.caption(
