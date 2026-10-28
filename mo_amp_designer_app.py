@@ -193,6 +193,14 @@ with main_tab1:
         ]
     )
     can_proceed = True
+    if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")) and pop_size not in valid_das_dennis_sizes(len(opt)):
+                
+        st.warning(
+            f"Recommended population sizes for the R-NSGA-II, R-NSGA-III algorithms "
+            f"with {len(opt)} objectives: **{valid_das_dennis_sizes(len(opt))}**"
+        )
+        can_proceed = False
+
     if len(Bacteria) == 0 and uploaded_file is None:
         st.warning("Please select at least one Bacteria or upload a dataset.")
         can_proceed = False
@@ -201,20 +209,11 @@ with main_tab1:
         st.warning("Please select at least two objectives to optimize.")
         can_proceed = False
 
-    if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")) and pop_size not in valid_das_dennis_sizes(len(opt)):
-            
-        st.warning(
-            f"Recommended population sizes for the R-NSGA-II, R-NSGA-III algorithms "
-            f"with {len(opt)} objectives: **{valid_das_dennis_sizes(len(opt))}**"
-        )
-        can_proceed = False
-        
     if len(algorithms) < 1:
         st.warning("Please select at least one algorithm to optimize.")
         can_proceed = False
     
-    else:
-        
+    if can_proceed:
         optimization_directions = {}
         st.caption(
             "For each objective, select whether to minimize or maximize the property. (Gravy is treated as hydrophobicity or hydrophilicity depending on user preference.)"
