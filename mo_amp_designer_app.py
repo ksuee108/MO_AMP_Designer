@@ -203,11 +203,13 @@ with main_tab1:
 
     if any(a in algorithms for a in ("R-NSGA-II", "R-NSGA-III")) and pop_size not in valid_das_dennis_sizes(len(opt)):
             
-            st.info(
-                f"Recommended population sizes for the R-NSGA-II, R-NSGA-III algorithms "
-                f"with {len(opt)} objectives: **{valid_das_dennis_sizes(len(opt))}**"
-            )
-            
+        st.info(
+            f"Recommended population sizes for the R-NSGA-II, R-NSGA-III algorithms "
+            f"with {len(opt)} objectives: **{valid_das_dennis_sizes(len(opt))}**"
+        )
+        can_proceed = False
+        
+
     if len(algorithms) < 1:
         st.warning("Please select at least one algorithm to optimize.")
         can_proceed = False
